@@ -1,0 +1,143 @@
+{
+  "name": "Clinic Appointment Automation - Workflow 1",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ]
+      },
+      "id": "whatsapp-trigger-1",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "credentials": {
+        "whatsAppOAuth2Api": {
+          "id": "whatsapp-oauth-id",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.messages ? $json.messages[0].type : '' }}",
+              "value2": "text"
+            }
+          ]
+        }
+      },
+      "id": "if-only-text",
+      "name": "Only Text Messages",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            {
+              "name": "phone",
+              "stringValue": "={{ $json.contacts[0].wa_id }}"
+            },
+            {
+              "name": "patient_wa_name",
+              "stringValue": "={{ $json.contacts[0].profile.name }}"
+            },
+            {
+              "name": "text",
+              "stringValue": "={{ $json.messages[0].text.body }}"
+            }
+          ]
+        }
+      },
+      "id": "edit-clean-data",
+      "name": "Clean Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [680, 280]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=Tum <CLINIC_NAME> ke AI receptionist ho. Tumhara kaam sirf appointment book, reschedule ya cancel karna aur clinic ki basic jaankari dena hai.\n\nAAJ KI DATE AUR TIME (India): {{ $now.setZone('Asia/Kolkata').toFormat(\"cccc, dd LLLL yyyy, hh:mm a\") }}\nPATIENT KA WHATSAPP NUMBER (tools me bilkul yahi number use karo): {{ $json.phone }}\n\nCLINIC KE NIYAM:\n- Doctor: <DOCTOR_NAME>\n- Clinic Monday se Saturday, subah 10:00 se shaam 6:00 baje tak khula hai. Sunday band.\n- Lunch break 1:00 se 2:00 baje tak: is time par booking nahi.\n- Har appointment ka slot 20 minute ka hai.\n- Past time par booking nahi. Aaj ke liye kam se kam 1 ghante baad ka slot do.\n- Time hamesha India time (+05:30) me likho, ISO format jaise 2026-11-20T11:20:00+05:30.\n\nBOOKING KA TAREEKA (isi order me):\n1. Pehle message par ek line me greeting do aur batao ki naam, phone aur problem sirf appointment booking ke liye use hongi.\n2. Ek-ek karke pucho: patient ka poora naam, problem (1 line), preferred date.\n3. Date mil jaye to tool get_day_events se us din ke saare events nikalo. Jo time busy hai wo mat do. Working hours ke andar 20-minute ke khali slots dhundo aur maximum 5 slots dikhao.\n4. Patient slot chune to booking se pehle tool check_slot_available se wahi slot dobara check karo. Available nahi ho to naya slot do.\n5. Available ho to tool book_appointment se event banao. Title: \"<Patient Name> - <Problem>\". Description me naam, phone aur problem likho.\n6. Booking ke turant baad tool log_booking se Sheet me row save karo (event ka id zaroor bhejo).\n7. Patient ko confirmation do: naam, date, time aur clinic ka naam.\n\nCANCEL / RESCHEDULE:\n- Cancel ke liye tool find_my_booking se patient ke number ki Booked appointment dhundo, cancel_event se calendar event delete karo, phir mark_cancelled se Sheet me Status Cancelled karo.\n- Reschedule = purani appointment cancel + nayi booking.\n\nSAKHT RULES:\n- Kabhi medical advice, diagnosis ya dawai ki salah mat do. Aisa sawal aaye to bolo ki doctor appointment ke time batayenge.\n- Emergency (seene me dard, saans ki takleef, behoshi, bahut zyada khoon jaisi baat) ho to booking mat karo; turant <CLINIC_PHONE> par call karne ya nazdeeki hospital jaane ko bolo.\n- Ek slot do logon ko kabhi mat do. Tool se confirm kiye bina booking confirm mat karo.\n- Calendar me \"CLINIC CLOSED\" event ho to us din booking mat do.\n- Jawab chhote rakho (3-4 line), polite Hinglish me. Emoji kam.\n- Clinic se bahar ke sawalon ka jawab mat do."
+        }
+      },
+      "id": "ai-agent-node",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [900, 280]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('Clean Data').first().json.phone_number_id || '<PHONE_NUMBER_ID>' }}",
+        "recipientPhoneNumber": "={{ $('Clean Data').first().json.phone }}",
+        "textBody": "={{ $json.output }}"
+      },
+      "id": "whatsapp-send-reply",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1160, 280]
+    }
+  ],
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Only Text Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Text Messages": {
+      "main": [
+        [
+          {
+            "node": "Clean Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata"
+  }
+}

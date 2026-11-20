@@ -1,0 +1,99 @@
+{
+  "name": "Clinic Daily Report - Workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-8pm",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getRows",
+        "sheetName": "Bookings"
+      },
+      "id": "get-all-rows",
+      "name": "Get All Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "language": "javascript",
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst today = $now.toFormat('yyyy-MM-dd');\nconst tomorrow = $now.plus({ days: 1 }).toFormat('yyyy-MM-dd');\nconst on = (r, day) => String(r.Start_ISO || '').startsWith(day);\nconst line = r => `- ${r.Time} | ${r.Patient_Name} | ${r.Phone} | ${r.Problem}`;\nconst todayRows = rows.filter(r => on(r, today));\nconst booked = todayRows.filter(r => r.Status === 'Booked');\nconst cancelled = todayRows.filter(r => r.Status === 'Cancelled');\nconst upcoming = rows\n.filter(r => on(r, tomorrow) && r.Status === 'Booked')\n.sort((a, b) => String(a.Start_ISO).localeCompare(String(b.Start_ISO)));\nconst report = [\n`<CLINIC_NAME> - Daily Report (${$now.toFormat('dd LLL yyyy')})`,\n'',\n`Aaj ke din ki appointments: ${booked.length} booked, ${cancelled.length} cancelled`,\n...(booked.length ? booked.map(line) : ['- Koi nahi']),\n'',\n'Aaj ke din ki cancelled appointments:',\n...(cancelled.length ? cancelled.map(line) : ['- Koi nahi']),\n'',\n`Kal ke upcoming patients (${upcoming.length}):`,\n...(upcoming.length ? upcoming.map(line) : ['- Abhi koi booking nahi'])\n].join('\\n');\nreturn [{ json: { report } }];"
+      },
+      "id": "build-report-code",
+      "name": "Build Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "toEmail": "<OWNER_EMAIL>",
+        "subject": "=Daily Clinic Report - {{ $now.toFormat('dd LLL yyyy') }}",
+        "emailType": "text",
+        "message": "={{ $json.report }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "send-email-report",
+      "name": "Send Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get All Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Rows": {
+      "main": [
+        [
+          {
+            "node": "Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Asia/Kolkata"
+  }
+}

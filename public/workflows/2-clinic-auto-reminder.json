@@ -1,0 +1,194 @@
+{
+  "name": "Clinic Reminder Workflow - Workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-15m",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getRows",
+        "sheetName": "Bookings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Status",
+              "condition": "equal",
+              "value": "Booked"
+            },
+            {
+              "keyName": "Reminder_Sent",
+              "condition": "equal",
+              "value": "No"
+            }
+          ]
+        }
+      },
+      "id": "get-booked-rows",
+      "name": "Get Booked Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ DateTime.fromISO($json.Start_ISO).diff($now, 'minutes').minutes }}",
+              "operation": "smallerEqual",
+              "value2": 75
+            },
+            {
+              "value1": "={{ DateTime.fromISO($json.Start_ISO).diff($now, 'minutes').minutes }}",
+              "operation": "larger",
+              "value2": 30
+            }
+          ]
+        },
+        "combinator": "and"
+      },
+      "id": "filter-within-75min",
+      "name": "Within Next 75 Min",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            {
+              "name": "time_text",
+              "stringValue": "={{ DateTime.fromISO($json.Start_ISO).setZone('Asia/Kolkata').toFormat('hh:mm a') }}"
+            }
+          ]
+        }
+      },
+      "id": "prep-message",
+      "name": "Prep Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "sendTemplate",
+        "phoneNumberId": "<PHONE_NUMBER_ID>",
+        "recipientPhoneNumber": "={{ $json.Phone }}",
+        "template": "appointment_reminder",
+        "templateLanguage": "en",
+        "components": {
+          "body": [
+            {
+              "text": "={{ $json.Patient_Name }}"
+            },
+            {
+              "text": "={{ $json.time_text }}"
+            }
+          ]
+        }
+      },
+      "id": "send-reminder-template",
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "sheetName": "Bookings",
+        "columnToMatchOn": "Event_ID",
+        "valueToMatchOn": "={{ $('Prep Message').item.json.Event_ID }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Reminder_Sent",
+              "fieldValue": "Yes"
+            }
+          ]
+        }
+      },
+      "id": "mark-reminder-sent",
+      "name": "Mark Reminder Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Booked Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Booked Rows": {
+      "main": [
+        [
+          {
+            "node": "Within Next 75 Min",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Within Next 75 Min": {
+      "main": [
+        [
+          {
+            "node": "Prep Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Message": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reminder": {
+      "main": [
+        [
+          {
+            "node": "Mark Reminder Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Asia/Kolkata"
+  }
+}
