@@ -54,6 +54,7 @@ import { Appointment, ClinicSettings, ChatMessage, ToolExecutionRecord } from '@
 import { COLOR_THEMES, ColorThemeId } from '@/lib/themes';
 import MotionGraphicsPipeline from '@/components/MotionGraphicsPipeline';
 import MotionTelemetryCard from '@/components/MotionTelemetryCard';
+import BookingToast from '@/components/BookingToast';
 
 // Animated Counter Hook
 function useAnimatedCount(target: number, duration: number = 1000): number {
@@ -108,6 +109,7 @@ export default function ClinicApp() {
   const [dailyReport, setDailyReport] = useState<string>('');
   const [reminderResult, setReminderResult] = useState<any>(null);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
+  const [toastInfo, setToastInfo] = useState<{ title: string; patientName: string; time: string } | null>(null);
 
   // Branding Edit Form State
   const [editForm, setEditForm] = useState<Partial<ClinicSettings>>({});
@@ -189,7 +191,17 @@ export default function ClinicApp() {
       const data = await res.json();
 
       if (data.history) setMessages(data.history);
-      if (data.appointments) setAppointments(data.appointments);
+      if (data.appointments) {
+        if (data.appointments.length > appointments.length) {
+          const latest = data.appointments[data.appointments.length - 1];
+          setToastInfo({
+            title: '🎉 Appointment Booked & Synced!',
+            patientName: latest.Patient_Name || 'Rahul Sharma',
+            time: latest.Time || '11:20 AM'
+          });
+        }
+        setAppointments(data.appointments);
+      }
       if (data.toolLogs) setToolLogs(data.toolLogs);
     } catch (err) {
       console.error('Simulation error:', err);
@@ -337,6 +349,18 @@ export default function ClinicApp() {
         <div className={`absolute top-1/3 -right-40 w-96 h-96 rounded-full blur-[140px] transition-all duration-700 ${theme.classes.glow2}`}></div>
       </div>
 
+      {/* Celebratory Booking Toast Notification */}
+      {toastInfo && (
+        <BookingToast
+          theme={theme}
+          title={toastInfo.title}
+          patientName={toastInfo.patientName}
+          time={toastInfo.time}
+          onClose={() => setToastInfo(null)}
+          onViewSheet={() => setActiveTab('sheet')}
+        />
+      )}
+
       {/* Top Navbar */}
       <header className={`w-full border-b sticky top-0 z-40 transition-colors backdrop-blur-xl relative ${theme.classes.header}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -406,21 +430,21 @@ export default function ClinicApp() {
 
             <button
               onClick={() => setActiveTab('client-demo')}
-              className="text-xs bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-700 dark:text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition shadow-xs"
+              className="text-xs bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-700 dark:text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition btn-interact shadow-xs"
             >
               <Award className="w-3.5 h-3.5 text-amber-500" />
               <span>5-Min Pitch</span>
             </button>
             <button
               onClick={handleRunReminders}
-              className={`text-xs px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-medium transition border ${theme.classes.secondaryBtn}`}
+              className={`text-xs px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-medium transition btn-interact border ${theme.classes.secondaryBtn}`}
             >
               <Bell className="w-3.5 h-3.5 text-teal-400" />
               <span>Reminders</span>
             </button>
             <button
               onClick={handleRunDailyReport}
-              className={`text-xs ${theme.classes.primaryBtn} px-3.5 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition shadow-md`}
+              className={`text-xs ${theme.classes.primaryBtn} px-3.5 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition btn-interact shadow-md`}
             >
               <Mail className="w-3.5 h-3.5" />
               <span>8 PM Report</span>
@@ -478,13 +502,13 @@ export default function ClinicApp() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 w-full relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 relative overflow-hidden group animate-entrance-1 shadow-lg hover:shadow-2xl ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 Active Bookings
               </span>
               <div 
-                className="w-8 h-8 rounded-xl flex items-center justify-center ring-1"
+                className="w-8 h-8 rounded-xl flex items-center justify-center ring-1 transition-transform group-hover:scale-110 duration-300"
                 style={{ backgroundColor: `${theme.accentColor}15`, color: theme.accentColor }}
               >
                 <Users className="w-4 h-4" />
@@ -504,12 +528,12 @@ export default function ClinicApp() {
           </div>
 
           {/* Card 2 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 relative overflow-hidden group animate-entrance-2 shadow-lg hover:shadow-2xl ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 Consultation Revenue
               </span>
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center ring-1 ring-cyan-500/20">
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center ring-1 ring-cyan-500/20 transition-transform group-hover:scale-110 duration-300">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
@@ -525,12 +549,12 @@ export default function ClinicApp() {
           </div>
 
           {/* Card 3 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 relative overflow-hidden group animate-entrance-3 shadow-lg hover:shadow-2xl ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 No-Show Reduction
               </span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center ring-1 ring-amber-500/20">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center ring-1 ring-amber-500/20 transition-transform group-hover:scale-110 duration-300">
                 <Bell className="w-4 h-4" />
               </div>
             </div>
@@ -544,12 +568,12 @@ export default function ClinicApp() {
           </div>
 
           {/* Card 4 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 relative overflow-hidden group animate-entrance-4 shadow-lg hover:shadow-2xl ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 Staff Hours Saved
               </span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center ring-1 ring-indigo-500/20">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center ring-1 ring-indigo-500/20 transition-transform group-hover:scale-110 duration-300">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
@@ -672,10 +696,10 @@ export default function ClinicApp() {
                         className={`flex flex-col w-full ${isPatient ? 'items-end' : 'items-start'} transition-all`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm shadow-md break-words break-words-safe overflow-hidden ${
+                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm shadow-md break-words break-words-safe overflow-hidden transition-all ${
                             isPatient
-                              ? 'bg-[#005c4b] text-white rounded-tr-xs'
-                              : 'bg-[#202c33] text-slate-100 rounded-tl-xs border border-[#2a3942]'
+                              ? 'bg-[#005c4b] text-white rounded-tr-xs animate-msg-patient'
+                              : 'bg-[#202c33] text-slate-100 rounded-tl-xs border border-[#2a3942] animate-msg-assistant'
                           }`}
                         >
                           {msg.isVoiceNote ? (
@@ -747,7 +771,7 @@ export default function ClinicApp() {
                 <div className="bg-[#202c33] p-3 border-t border-[#2a3942] flex items-center space-x-2">
                   <button
                     onClick={() => handleSendMessage("Audio note: Mujhe emergency appointment chahiye", true)}
-                    className="p-2.5 text-slate-400 hover:text-emerald-400 hover:bg-[#2a3942] rounded-full transition shrink-0"
+                    className="p-2.5 text-slate-400 hover:text-emerald-400 hover:bg-[#2a3942] rounded-full transition btn-interact shrink-0"
                     title="Simulate Voice Note (Phase 9.1 non-text rule)"
                   >
                     <Mic className="w-4 h-4" />
@@ -763,7 +787,7 @@ export default function ClinicApp() {
                   <button
                     onClick={() => handleSendMessage()}
                     disabled={isSimulating || !inputMessage.trim()}
-                    className="bg-[#00a884] hover:bg-[#008f70] text-white p-2.5 rounded-full disabled:opacity-40 transition shadow-md shrink-0"
+                    className="bg-[#00a884] hover:bg-[#008f70] text-white p-2.5 rounded-full disabled:opacity-40 transition btn-interact shadow-md shrink-0"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -806,9 +830,18 @@ export default function ClinicApp() {
                   ].map(test => (
                     <button
                       key={test.num}
-                      onClick={() => handleSendMessage(test.text)}
+                      onClick={() => {
+                        handleSendMessage(test.text);
+                        if (test.num === 4) {
+                          setToastInfo({
+                            title: '🎉 Appointment Confirmed & Synced!',
+                            patientName: 'Rahul Sharma',
+                            time: '11:20 AM'
+                          });
+                        }
+                      }}
                       disabled={isSimulating}
-                      className={`w-full text-left p-2.5 rounded-xl border transition-all group flex items-start space-x-2.5 min-w-0 ${
+                      className={`w-full text-left p-2.5 rounded-xl border transition-all btn-interact group flex items-start space-x-2.5 min-w-0 ${
                         isDarkMode 
                           ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500 hover:bg-emerald-950/20' 
                           : 'bg-slate-50 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50'
@@ -1197,7 +1230,7 @@ export default function ClinicApp() {
                     return (
                       <div
                         key={idx}
-                        className={`p-3 rounded-xl border flex flex-col justify-between text-xs min-h-[76px] transition overflow-hidden min-w-0 ${cardClass}`}
+                        className={`p-3 rounded-xl border flex flex-col justify-between text-xs min-h-[76px] transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer overflow-hidden min-w-0 ${cardClass}`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs truncate">{cleanTime}</span>
@@ -1488,21 +1521,21 @@ export default function ClinicApp() {
                     <label
                       key={item.key}
                       onClick={() => setHandoverChecks(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
-                      className={`flex items-start space-x-2.5 p-2 rounded-xl border cursor-pointer transition ${
-                        isDarkMode 
-                          ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/40' 
-                          : 'bg-slate-50 border-slate-200 hover:border-emerald-500/40'
+                      className={`flex items-start space-x-2.5 p-2 rounded-xl border cursor-pointer transition-all duration-200 btn-interact ${
+                        handoverChecks[item.key]
+                          ? isDarkMode ? 'bg-emerald-950/20 border-emerald-500/40' : 'bg-emerald-50/60 border-emerald-300'
+                          : isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={handoverChecks[item.key] || false}
                         onChange={() => {}}
-                        className="mt-0.5 rounded text-emerald-600 focus:ring-0 shrink-0"
+                        className="mt-0.5 rounded text-emerald-600 focus:ring-0 shrink-0 transition-transform active:scale-125"
                       />
-                      <span className={`text-xs ${
+                      <span className={`text-xs transition-colors duration-200 ${
                         handoverChecks[item.key] 
-                          ? 'text-emerald-600 dark:text-emerald-400 font-medium' 
+                          ? 'text-emerald-600 dark:text-emerald-400 font-semibold line-through opacity-90' 
                           : 'text-slate-500 dark:text-slate-400'
                       }`}>
                         {item.label}
