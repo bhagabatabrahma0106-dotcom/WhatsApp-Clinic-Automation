@@ -52,6 +52,8 @@ import {
 } from 'lucide-react';
 import { Appointment, ClinicSettings, ChatMessage, ToolExecutionRecord } from '@/lib/types';
 import { COLOR_THEMES, ColorThemeId } from '@/lib/themes';
+import MotionGraphicsPipeline from '@/components/MotionGraphicsPipeline';
+import MotionTelemetryCard from '@/components/MotionTelemetryCard';
 
 // Animated Counter Hook
 function useAnimatedCount(target: number, duration: number = 1000): number {
@@ -80,7 +82,7 @@ function useAnimatedCount(target: number, duration: number = 1000): number {
 }
 
 export default function ClinicApp() {
-  const [activeTab, setActiveTab] = useState<'simulator' | 'sheet' | 'calendar' | 'reports' | 'client-demo' | 'branding' | 'guide'>('simulator');
+  const [activeTab, setActiveTab] = useState<'simulator' | 'pipeline' | 'sheet' | 'calendar' | 'reports' | 'client-demo' | 'branding' | 'guide'>('simulator');
   const [themeId, setThemeId] = useState<ColorThemeId>('cyber-emerald');
   const theme = COLOR_THEMES[themeId];
   const isDarkMode = theme.isDark;
@@ -430,6 +432,7 @@ export default function ClinicApp() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1.5 border-t border-slate-200 dark:border-slate-800/80 overflow-x-auto no-scrollbar">
           {[
             { id: 'simulator', label: 'WhatsApp 3D Simulator', icon: MessageSquare, badge: 'Interactive' },
+            { id: 'pipeline', label: 'Motion Graphics Pipeline', icon: Activity, badge: 'Live Stream' },
             { id: 'sheet', label: 'Google Sheets (Bookings Log)', icon: FileSpreadsheet, badge: `${appointments.length} Rows` },
             { id: 'calendar', label: 'Calendar & 20-Min Slots', icon: Calendar, badge: 'IST Grid' },
             { id: 'reports', label: 'Auto-Reminders & 8 PM Report', icon: Bell, badge: 'Cron Tasks' },
@@ -566,6 +569,29 @@ export default function ClinicApp() {
         {/* TAB 1: WHATSAPP 3D SIMULATOR */}
         {activeTab === 'simulator' && (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
+            {/* Motion Stream Quick-Look Banner */}
+            <div className={`xl:col-span-12 flex items-center justify-between p-3.5 rounded-2xl border transition shadow-sm ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-slate-900/60 border-emerald-500/30' 
+                : 'bg-gradient-to-r from-emerald-50 via-cyan-50 to-white border-emerald-200'
+            }`}>
+              <div className="flex items-center space-x-3 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+                <span className={`text-xs font-bold truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  Live Motion Graphics: Active SVG Pipeline Streaming
+                </span>
+                <span className="hidden md:inline text-[11px] text-slate-500 dark:text-slate-400">
+                  • 7 tools wired • Asia/Kolkata +05:30 slots • Meta v22.0
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveTab('pipeline')}
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center space-x-1 shrink-0 ml-2"
+              >
+                <span>Full Motion View &gt;</span>
+              </button>
+            </div>
+
             {/* 3D Tilted Device Mockup */}
             <div className="xl:col-span-7 flex flex-col w-full min-w-0 perspective-1000">
               <div className={`rounded-3xl border shadow-2xl overflow-hidden flex flex-col h-[710px] tilt-device ${
@@ -747,6 +773,9 @@ export default function ClinicApp() {
 
             {/* Right Panel: Verification Tests & Live Tool Inspector */}
             <div className="xl:col-span-5 flex flex-col space-y-4 w-full min-w-0">
+              {/* Motion Telemetry Heartbeat & Confidence */}
+              <MotionTelemetryCard theme={theme} />
+
               {/* Phase 5 Test Suite */}
               <div className={`rounded-2xl border p-5 shadow-xl ${
                 isDarkMode ? 'bg-[#101726]/80 border-slate-800' : 'bg-white border-slate-200'
@@ -862,7 +891,60 @@ export default function ClinicApp() {
           </div>
         )}
 
-        {/* TAB 2: GOOGLE SHEETS LIVE VIEW */}
+        {/* TAB 2: MOTION GRAPHICS PIPELINE */}
+        {activeTab === 'pipeline' && (
+          <div className="space-y-6 w-full min-w-0">
+            {/* Main Interactive Motion Graphics Pipeline */}
+            <MotionGraphicsPipeline theme={theme} isSimulating={isSimulating} />
+
+            {/* Supporting Telemetry and Architecture Explainer */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+              <div className="lg:col-span-5 w-full">
+                <MotionTelemetryCard theme={theme} />
+              </div>
+
+              <div className={`lg:col-span-7 p-5 rounded-2xl border flex flex-col justify-between shadow-xl ${
+                isDarkMode ? 'bg-[#101726]/80 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div>
+                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                    <h4 className={`text-xs sm:text-sm font-bold flex items-center space-x-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      <Sparkles className="w-4 h-4 text-emerald-500" />
+                      <span>Zero-Latency Motion Graphics Architecture</span>
+                    </h4>
+                    <span className="text-[10px] font-mono text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                      Phase 0 - 7
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 leading-relaxed">
+                    This motion visualizer demonstrates how patient appointments flow end-to-end with zero human delay:
+                  </p>
+                  <ul className="text-xs text-slate-600 dark:text-slate-300 mt-2 space-y-1.5 list-disc list-inside">
+                    <li><strong className="text-emerald-500">Inbound WhatsApp</strong>: Meta Graph API v22.0 webhook triggers n8n or Next.js.</li>
+                    <li><strong className="text-cyan-500">LangChain AI Core</strong>: GPT-4o-mini parses patient intent and invokes 7 clinic tools.</li>
+                    <li><strong className="text-blue-500">Google Calendar</strong>: Real-time IST slot availability checking and conflict prevention.</li>
+                    <li><strong className="text-emerald-500">Google Sheets DB</strong>: Automatic logging of patient records into 9-column spreadsheet.</li>
+                    <li><strong className="text-amber-500">Auto-Reminders & 8 PM Report</strong>: 15-minute cron templates and daily clinic owner summaries.</li>
+                  </ul>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-mono text-emerald-500 font-semibold">
+                    ✓ Interactive SVG animations: Click any node above to inspect phase specs
+                  </span>
+                  <button
+                    onClick={() => setActiveTab('simulator')}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-xs flex items-center space-x-1"
+                  >
+                    <span>Test In Live Simulator &gt;</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: GOOGLE SHEETS LIVE VIEW */}
         {activeTab === 'sheet' && (
           <div className={`rounded-2xl border shadow-xl overflow-hidden ${
             isDarkMode ? 'bg-[#101726]/80 border-slate-800' : 'bg-white border-slate-200'
