@@ -1,10 +1,35 @@
-import { Appointment, ClinicSettings, ChatMessage, ToolExecutionRecord } from './types';
+import { Appointment, ClinicSettings, ChatMessage, ToolExecutionRecord, Doctor } from './types';
 
-// Default initial settings matching the PDF guide
+const defaultDoctors: Doctor[] = [
+  {
+    id: 'DOC-1',
+    name: 'Dr. Mehta',
+    specialty: 'Dental Surgeon & Implantologist',
+    qualification: 'BDS, MDS (Oral & Maxillofacial)',
+    experience: '12 Years',
+    fee: 500,
+    available: true,
+  },
+  {
+    id: 'DOC-2',
+    name: 'Dr. Sharma',
+    specialty: 'Consultant Physician',
+    qualification: 'MBBS, MD (Medicine)',
+    experience: '15 Years',
+    fee: 600,
+    available: true,
+  }
+];
+
 const defaultSettings: ClinicSettings = {
-  clinicName: 'Sunrise Clinic',
+  clinicName: 'Sunrise Multi-Speciality Clinic',
   doctorName: 'Dr. Mehta',
+  doctorSpecialty: 'Dental Surgeon & Implantologist',
+  doctorQualification: 'BDS, MDS (Oral & Maxillofacial)',
+  consultationFee: 500,
   clinicPhone: '+91 98765 43210',
+  emergencyPhone: '+91 98765 00000',
+  clinicAddress: 'Plot 42, Metro Green Avenue, Indirapuram, Delhi-NCR',
   ownerEmail: 'owner.sunriseclinic@gmail.com',
   slotDurationMinutes: 20,
   workStartTime: '10:00',
@@ -13,26 +38,25 @@ const defaultSettings: ClinicSettings = {
   lunchEndTime: '14:00',
   timezone: 'Asia/Kolkata',
   closedDays: [0], // Sunday
+  languageMode: 'Hinglish',
   openaiModel: 'gpt-4o-mini',
   metaVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'clinic_bot_secret_token_2026',
+  doctors: defaultDoctors,
 };
 
-// Global in-memory storage (singleton across serverless invokes in same container)
 class ClinicStore {
   private appointments: Appointment[] = [];
   private settings: ClinicSettings = { ...defaultSettings };
   private conversationHistory: Map<string, ChatMessage[]> = new Map();
   private toolLogs: ToolExecutionRecord[] = [];
-  private clinicClosedDates: Set<string> = new Set(); // YYYY-MM-DD
+  private clinicClosedDates: Set<string> = new Set();
 
   constructor() {
     this.seedDemoData();
   }
 
   private seedDemoData() {
-    // Current IST date
     const now = new Date();
-    // Offset for IST (+5:30)
     const istOffset = 5.5 * 60 * 60 * 1000;
     const istNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
     const yyyy = istNow.getFullYear();
@@ -40,6 +64,13 @@ class ClinicStore {
     const dd = String(istNow.getDate()).padStart(2, '0');
     const todayStr = `${yyyy}-${mm}-${dd}`;
     const dateFormatted = `${dd}-${mm}-${yyyy}`;
+
+    const tomDate = new Date(istNow.getTime() + 24 * 60 * 60 * 1000);
+    const tomYYYY = tomDate.getFullYear();
+    const tomMM = String(tomDate.getMonth() + 1).padStart(2, '0');
+    const tomDD = String(tomDate.getDate()).padStart(2, '0');
+    const tomorrowStr = `${tomYYYY}-${tomMM}-${tomDD}`;
+    const tomorrowFormatted = `${tomDD}-${tomMM}-${tomYYYY}`;
 
     this.appointments = [
       {
@@ -51,8 +82,10 @@ class ClinicStore {
         Patient_Name: 'Amit Verma',
         Phone: '919811122233',
         Problem: 'Fever and cold since 2 days',
-        Status: 'Booked',
+        Doctor_Name: 'Dr. Mehta',
+        Status: 'Completed',
         Reminder_Sent: 'Yes',
+        fee: 500,
         createdAt: new Date().toISOString(),
       },
       {
@@ -63,9 +96,11 @@ class ClinicStore {
         Time: '11:40 AM',
         Patient_Name: 'Pooja Singh',
         Phone: '919822233344',
-        Problem: 'Routine dental checkup',
+        Problem: 'Routine dental cavity checkup',
+        Doctor_Name: 'Dr. Mehta',
         Status: 'Booked',
         Reminder_Sent: 'No',
+        fee: 500,
         createdAt: new Date().toISOString(),
       },
       {
@@ -76,9 +111,56 @@ class ClinicStore {
         Time: '12:20 PM',
         Patient_Name: 'Vikram Joshi',
         Phone: '919833344455',
-        Problem: 'Sprained wrist',
+        Problem: 'Wrist sprain while playing cricket',
+        Doctor_Name: 'Dr. Sharma',
         Status: 'Cancelled',
         Reminder_Sent: 'No',
+        fee: 600,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'EVT-1004',
+        Event_ID: 'EVT-1004',
+        Start_ISO: `${todayStr}T15:20:00+05:30`,
+        Date: dateFormatted,
+        Time: '03:20 PM',
+        Patient_Name: 'Ananya Roy',
+        Phone: '919844455566',
+        Problem: 'Root canal consultation follow-up',
+        Doctor_Name: 'Dr. Mehta',
+        Status: 'Booked',
+        Reminder_Sent: 'No',
+        fee: 500,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'EVT-1005',
+        Event_ID: 'EVT-1005',
+        Start_ISO: `${tomorrowStr}T10:40:00+05:30`,
+        Date: tomorrowFormatted,
+        Time: '10:40 AM',
+        Patient_Name: 'Deepak Patel',
+        Phone: '919855566677',
+        Problem: 'Blood pressure and glucose review',
+        Doctor_Name: 'Dr. Sharma',
+        Status: 'Booked',
+        Reminder_Sent: 'No',
+        fee: 600,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'EVT-1006',
+        Event_ID: 'EVT-1006',
+        Start_ISO: `${tomorrowStr}T11:20:00+05:30`,
+        Date: tomorrowFormatted,
+        Time: '11:20 AM',
+        Patient_Name: 'Neha Kapoor',
+        Phone: '919866677788',
+        Problem: 'Teeth whitening procedure',
+        Doctor_Name: 'Dr. Mehta',
+        Status: 'Booked',
+        Reminder_Sent: 'No',
+        fee: 500,
         createdAt: new Date().toISOString(),
       }
     ];
@@ -161,7 +243,6 @@ class ClinicStore {
     return Array.from(this.clinicClosedDates);
   }
 
-  // Conversation history per patient phone number
   public getHistory(phone: string): ChatMessage[] {
     const clean = phone.replace(/[^0-9]/g, '');
     return this.conversationHistory.get(clean) || [];
@@ -171,8 +252,7 @@ class ClinicStore {
     const clean = phone.replace(/[^0-9]/g, '');
     const hist = this.conversationHistory.get(clean) || [];
     hist.push(msg);
-    // Keep last 15 messages (context window)
-    if (hist.length > 15) {
+    if (hist.length > 20) {
       hist.shift();
     }
     this.conversationHistory.set(clean, hist);
@@ -183,7 +263,6 @@ class ClinicStore {
     this.conversationHistory.delete(clean);
   }
 
-  // Tool audit logs
   public logToolExecution(name: string, params: Record<string, unknown>, result: unknown) {
     this.toolLogs.unshift({
       name,
@@ -201,7 +280,6 @@ class ClinicStore {
   }
 }
 
-// Global singleton for Next.js hot reload safety
 const globalForStore = global as unknown as { clinicStore: ClinicStore };
 export const clinicStore = globalForStore.clinicStore || new ClinicStore();
 if (process.env.NODE_ENV !== 'production') globalForStore.clinicStore = clinicStore;

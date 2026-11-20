@@ -1,3 +1,13 @@
+export interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  qualification: string;
+  experience: string;
+  fee: number;
+  available: boolean;
+}
+
 export interface Appointment {
   id: string; // Event_ID
   Start_ISO: string; // e.g., 2026-11-20T11:20:00+05:30
@@ -6,24 +16,32 @@ export interface Appointment {
   Patient_Name: string;
   Phone: string;
   Problem: string;
+  Doctor_Name?: string;
   Status: 'Booked' | 'Cancelled' | 'Completed';
   Event_ID: string;
   Reminder_Sent: 'Yes' | 'No';
   createdAt?: string;
+  fee?: number;
 }
 
 export interface ClinicSettings {
   clinicName: string;
   doctorName: string;
+  doctorSpecialty: string;
+  doctorQualification: string;
+  consultationFee: number;
   clinicPhone: string;
+  emergencyPhone: string;
+  clinicAddress: string;
   ownerEmail: string;
-  slotDurationMinutes: number; // 20
+  slotDurationMinutes: number; // 15, 20, 30
   workStartTime: string; // '10:00'
   workEndTime: string; // '18:00'
   lunchStartTime: string; // '13:00'
   lunchEndTime: string; // '14:00'
   timezone: string; // 'Asia/Kolkata'
   closedDays: number[]; // 0 for Sunday
+  languageMode: 'Hinglish' | 'Hindi' | 'English';
   openaiApiKey?: string;
   openaiModel?: string;
   metaPhoneNumberId?: string;
@@ -32,6 +50,7 @@ export interface ClinicSettings {
   metaWabaId?: string;
   googleCalendarId?: string;
   googleSheetId?: string;
+  doctors?: Doctor[];
 }
 
 export interface ChatMessage {
@@ -40,6 +59,8 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   toolsUsed?: string[];
+  isVoiceNote?: boolean;
+  audioDuration?: string;
 }
 
 export interface ToolExecutionRecord {
@@ -55,6 +76,7 @@ export interface DailyReportData {
   bookedCount: number;
   cancelledCount: number;
   upcomingCount: number;
+  totalRevenue: number;
   todayBooked: Appointment[];
   todayCancelled: Appointment[];
   tomorrowUpcoming: Appointment[];
