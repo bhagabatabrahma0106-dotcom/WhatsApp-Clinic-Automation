@@ -47,9 +47,11 @@ import {
   Activity,
   Radio,
   Play,
-  Pause
+  Pause,
+  Palette
 } from 'lucide-react';
 import { Appointment, ClinicSettings, ChatMessage, ToolExecutionRecord } from '@/lib/types';
+import { COLOR_THEMES, ColorThemeId } from '@/lib/themes';
 
 // Animated Counter Hook
 function useAnimatedCount(target: number, duration: number = 1000): number {
@@ -79,7 +81,9 @@ function useAnimatedCount(target: number, duration: number = 1000): number {
 
 export default function ClinicApp() {
   const [activeTab, setActiveTab] = useState<'simulator' | 'sheet' | 'calendar' | 'reports' | 'client-demo' | 'branding' | 'guide'>('simulator');
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true); // Futuristic dark mode default
+  const [themeId, setThemeId] = useState<ColorThemeId>('cyber-emerald');
+  const theme = COLOR_THEMES[themeId];
+  const isDarkMode = theme.isDark;
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [settings, setSettings] = useState<ClinicSettings | null>(null);
   const [closedDates, setClosedDates] = useState<string[]>([]);
@@ -324,61 +328,80 @@ export default function ClinicApp() {
   });
 
   return (
-    <div className={`min-h-screen w-full overflow-x-hidden transition-colors duration-300 ${
-      isDarkMode ? 'bg-[#070b14] text-slate-100 dark' : 'bg-[#f4f7fb] text-slate-800'
-    }`}>
+    <div className={`min-h-screen w-full overflow-x-hidden transition-colors duration-300 ${theme.classes.bg} ${theme.isDark ? 'dark' : ''}`}>
       {/* Background Futuristic Glow Orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-[120px] transition-opacity duration-500 ${
-          isDarkMode ? 'bg-emerald-600/15' : 'bg-emerald-500/10'
-        }`}></div>
-        <div className={`absolute top-1/3 -right-40 w-96 h-96 rounded-full blur-[140px] transition-opacity duration-500 ${
-          isDarkMode ? 'bg-cyan-600/15' : 'bg-teal-500/10'
-        }`}></div>
-        <div className={`absolute -bottom-40 left-1/3 w-96 h-96 rounded-full blur-[130px] transition-opacity duration-500 ${
-          isDarkMode ? 'bg-indigo-600/15' : 'bg-indigo-500/10'
-        }`}></div>
+        <div className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-[120px] transition-all duration-700 ${theme.classes.glow1}`}></div>
+        <div className={`absolute top-1/3 -right-40 w-96 h-96 rounded-full blur-[140px] transition-all duration-700 ${theme.classes.glow2}`}></div>
       </div>
 
       {/* Top Navbar */}
-      <header className={`w-full border-b sticky top-0 z-40 transition-colors backdrop-blur-xl relative ${
-        isDarkMode ? 'bg-[#0b101c]/90 border-slate-800/80' : 'bg-white/90 border-slate-200/80 shadow-xs'
-      }`}>
+      <header className={`w-full border-b sticky top-0 z-40 transition-colors backdrop-blur-xl relative ${theme.classes.header}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Brand Info */}
           <div className="flex items-center space-x-3.5 min-w-0 flex-1">
             <div className="relative group shrink-0">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/25 ring-2 ring-emerald-400/30">
+              <div 
+                className="h-11 w-11 rounded-xl flex items-center justify-center text-white shadow-lg ring-2 transition-all"
+                style={{ backgroundColor: theme.accentColor, boxShadow: `0 10px 25px -5px ${theme.accentColor}40` }}
+              >
                 <Stethoscope className="w-5 h-5 animate-pulse-subtle" />
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-[#0b101c] rounded-full animate-ping"></span>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#0b101c] rounded-full"></span>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-slate-900 rounded-full animate-ping"></span>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className={`font-extrabold text-base sm:text-lg tracking-tight truncate ${
-                  isDarkMode ? 'text-white' : 'text-slate-900'
-                }`}>
+                <h1 className={`font-extrabold text-base sm:text-lg tracking-tight truncate ${theme.classes.textPrimary}`}>
                   {settings?.clinicName || 'Sunrise Multi-Speciality Clinic'}
                 </h1>
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 shrink-0 flex items-center shadow-xs">
+                <span className={`text-[10px] ${theme.classes.accentBg} ${theme.classes.accentText} font-bold px-2.5 py-0.5 rounded-full border ${theme.classes.accentBorder} shrink-0 flex items-center shadow-xs`}>
                   <Activity className="w-3 h-3 mr-1 animate-pulse" />
-                  Futuristic AI v2.5
+                  {theme.name}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                <span className="font-semibold text-teal-600 dark:text-teal-400">{settings?.doctorName || 'Dr. Mehta'}</span>
+              <p className={`text-xs ${theme.classes.textSecondary} truncate mt-0.5`}>
+                <span className={`font-semibold ${theme.classes.accentText}`}>{settings?.doctorName || 'Dr. Mehta'}</span>
                 <span className="mx-1.5">•</span>
                 <span>{settings?.doctorSpecialty || 'Dental Surgeon'}</span>
                 <span className="mx-1.5">•</span>
-                <span className="text-slate-400">10:00 AM - 6:00 PM IST</span>
+                <span>10:00 AM - 6:00 PM IST</span>
               </p>
             </div>
           </div>
 
-          {/* Quick Actions & Theme Toggle */}
+          {/* Quick Actions & 4-Theme Curated Palette Switcher */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Curated Color Themes Picker */}
+            <div className={`flex items-center space-x-1 p-1 rounded-xl border ${
+              theme.isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-100 border-slate-300'
+            }`} title="Select Theme Palette">
+              <div className="px-1.5 flex items-center text-[10px] font-bold text-slate-400">
+                <Palette className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                <span className="hidden lg:inline">Theme:</span>
+              </div>
+              {(Object.keys(COLOR_THEMES) as ColorThemeId[]).map(tId => {
+                const t = COLOR_THEMES[tId];
+                const isSelected = themeId === tId;
+                return (
+                  <button
+                    key={tId}
+                    onClick={() => setThemeId(tId)}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center space-x-1.5 transition-all ${
+                      isSelected
+                        ? `${theme.isDark ? 'bg-slate-800 text-white shadow-xs ring-1 ring-white/20' : 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-300'}`
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title={`${t.name}: ${t.tagline}`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.accentColor }}></span>
+                    <span className="hidden sm:inline">{t.name.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <button
               onClick={() => setActiveTab('client-demo')}
               className="text-xs bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-700 dark:text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition shadow-xs"
@@ -388,33 +411,17 @@ export default function ClinicApp() {
             </button>
             <button
               onClick={handleRunReminders}
-              className={`text-xs px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-medium transition border ${
-                isDarkMode 
-                  ? 'bg-slate-900/80 text-slate-200 border-slate-700 hover:bg-slate-800' 
-                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-              }`}
+              className={`text-xs px-3 py-1.5 rounded-xl flex items-center space-x-1.5 font-medium transition border ${theme.classes.secondaryBtn}`}
             >
               <Bell className="w-3.5 h-3.5 text-teal-400" />
               <span>Reminders</span>
             </button>
             <button
               onClick={handleRunDailyReport}
-              className="text-xs bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white px-3.5 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition shadow-md shadow-emerald-500/20"
+              className={`text-xs ${theme.classes.primaryBtn} px-3.5 py-1.5 rounded-xl flex items-center space-x-1.5 font-bold transition shadow-md`}
             >
               <Mail className="w-3.5 h-3.5" />
               <span>8 PM Report</span>
-            </button>
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-xl border transition ${
-                isDarkMode 
-                  ? 'bg-slate-900 text-amber-400 border-slate-700 hover:bg-slate-800' 
-                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-              }`}
-              title={isDarkMode ? "Switch to Light Medical Theme" : "Switch to Futuristic Dark Theme"}
-            >
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -438,17 +445,24 @@ export default function ClinicApp() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center space-x-2 py-3 px-3.5 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'border-emerald-500 text-emerald-600 dark:border-emerald-400 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+                    ? 'border-current font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
+                style={{
+                  color: isActive ? theme.accentColor : undefined,
+                  borderColor: isActive ? theme.accentColor : 'transparent'
+                }}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
+                <Icon className="w-4 h-4" style={{ color: isActive ? theme.accentColor : undefined }} />
                 <span>{tab.label}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  isActive 
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border border-emerald-500/30' 
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-400'
-                }`}>
+                <span 
+                  className="text-[10px] px-2 py-0.5 rounded-full font-bold border transition-all"
+                  style={{
+                    backgroundColor: isActive ? `${theme.accentColor}20` : undefined,
+                    color: isActive ? theme.accentColor : undefined,
+                    borderColor: isActive ? `${theme.accentColor}40` : 'transparent'
+                  }}
+                >
                   {tab.badge}
                 </span>
               </button>
@@ -457,44 +471,39 @@ export default function ClinicApp() {
         </div>
       </header>
 
-      {/* Futuristic Metric Cards with Glowing Rings */}
+      {/* Futuristic Metric Cards with Dynamic Theming */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 w-full relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${
-            isDarkMode 
-              ? 'bg-[#101726]/80 border-slate-800/90 shadow-xl hover:border-emerald-500/50' 
-              : 'bg-white border-slate-200 shadow-xs hover:border-emerald-500/40'
-          }`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 Active Bookings
               </span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center ring-1 ring-emerald-500/20">
+              <div 
+                className="w-8 h-8 rounded-xl flex items-center justify-center ring-1"
+                style={{ backgroundColor: `${theme.accentColor}15`, color: theme.accentColor }}
+              >
                 <Users className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              <span className={`text-3xl font-black tracking-tight ${theme.classes.textPrimary}`}>
                 {animatedBookings}
               </span>
-              <span className="text-xs font-bold text-emerald-500 flex items-center">
+              <span className="text-xs font-bold flex items-center" style={{ color: theme.accentColor }}>
                 <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" /> 100% Automated
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+            <p className={`text-[11px] mt-1 truncate ${theme.classes.textSecondary}`}>
               {cancelledBookings.length} cancellations • 0 double-bookings
             </p>
           </div>
 
           {/* Card 2 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${
-            isDarkMode 
-              ? 'bg-[#101726]/80 border-slate-800/90 shadow-xl hover:border-cyan-500/50' 
-              : 'bg-white border-slate-200 shadow-xs hover:border-cyan-500/40'
-          }`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 Consultation Revenue
               </span>
               <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center ring-1 ring-cyan-500/20">
@@ -502,24 +511,20 @@ export default function ClinicApp() {
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              <span className={`text-3xl font-black tracking-tight ${theme.classes.textPrimary}`}>
                 ₹{animatedRevenue.toLocaleString('en-IN')}
               </span>
-              <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">calculated</span>
+              <span className="text-xs text-cyan-500 font-semibold">calculated</span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+            <p className={`text-[11px] mt-1 truncate ${theme.classes.textSecondary}`}>
               Avg ₹{settings?.consultationFee || 500} per patient visit
             </p>
           </div>
 
           {/* Card 3 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${
-            isDarkMode 
-              ? 'bg-[#101726]/80 border-slate-800/90 shadow-xl hover:border-amber-500/50' 
-              : 'bg-white border-slate-200 shadow-xs hover:border-amber-500/40'
-          }`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 No-Show Reduction
               </span>
               <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center ring-1 ring-amber-500/20">
@@ -527,22 +532,18 @@ export default function ClinicApp() {
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">94.8%</span>
+              <span className={`text-3xl font-black tracking-tight ${theme.classes.textPrimary}`}>94.8%</span>
               <span className="text-xs font-bold text-amber-500">Attendance</span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+            <p className={`text-[11px] mt-1 truncate ${theme.classes.textSecondary}`}>
               Driven by 15-min WhatsApp templates (Workflow 2)
             </p>
           </div>
 
           {/* Card 4 */}
-          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${
-            isDarkMode 
-              ? 'bg-[#101726]/80 border-slate-800/90 shadow-xl hover:border-indigo-500/50' 
-              : 'bg-white border-slate-200 shadow-xs hover:border-indigo-500/40'
-          }`}>
+          <div className={`p-4 rounded-2xl border transition-all duration-300 hover:translate-y-[-2px] relative overflow-hidden group ${theme.classes.card} ${theme.classes.cardHoverBorder}`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className={`text-xs font-bold uppercase tracking-wider ${theme.classes.textSecondary}`}>
                 Staff Hours Saved
               </span>
               <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center ring-1 ring-indigo-500/20">
@@ -550,10 +551,10 @@ export default function ClinicApp() {
               </div>
             </div>
             <div className="mt-2.5 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">2.5 Hrs</span>
+              <span className={`text-3xl font-black tracking-tight ${theme.classes.textPrimary}`}>2.5 Hrs</span>
               <span className="text-xs font-bold text-indigo-500">daily</span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+            <p className={`text-[11px] mt-1 truncate ${theme.classes.textSecondary}`}>
               Instant responses 24/7 without receptionist burnout
             </p>
           </div>
@@ -568,8 +569,8 @@ export default function ClinicApp() {
             {/* 3D Tilted Device Mockup */}
             <div className="xl:col-span-7 flex flex-col w-full min-w-0 perspective-1000">
               <div className={`rounded-3xl border shadow-2xl overflow-hidden flex flex-col h-[710px] tilt-device ${
-                isDarkMode 
-                  ? 'bg-[#111b21] border-slate-700/80 shadow-emerald-950/20' 
+                theme.isDark 
+                  ? 'bg-[#111b21] border-slate-700/80 shadow-black/50' 
                   : 'bg-white border-slate-300 shadow-xl'
               }`}>
                 {/* Phone Speaker Notch Header */}
