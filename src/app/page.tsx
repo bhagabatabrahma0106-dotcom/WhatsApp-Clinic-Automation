@@ -38,12 +38,15 @@ import {
   PlusCircle,
   XCircle,
   CheckCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Appointment, ClinicSettings, ChatMessage, ToolExecutionRecord, Doctor } from '@/lib/types';
 
 export default function ClinicApp() {
   const [activeTab, setActiveTab] = useState<'simulator' | 'sheet' | 'calendar' | 'reports' | 'client-demo' | 'branding' | 'guide'>('simulator');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // Default to clean, elegant medical light theme
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [settings, setSettings] = useState<ClinicSettings | null>(null);
   const [closedDates, setClosedDates] = useState<string[]>([]);
@@ -268,11 +271,9 @@ export default function ClinicApp() {
     document.body.removeChild(link);
   };
 
-  // Calculations for executive stats
   const activeBookings = appointments.filter(a => a.Status === 'Booked' || a.Status === 'Completed');
   const cancelledBookings = appointments.filter(a => a.Status === 'Cancelled');
   const totalRevenue = activeBookings.reduce((sum, a) => sum + (a.fee || settings?.consultationFee || 500), 0);
-  const remindersSentCount = appointments.filter(a => a.Reminder_Sent === 'Yes').length;
 
   const filteredAppointments = appointments.filter(a => {
     const matchesSearch = 
@@ -285,77 +286,96 @@ export default function ClinicApp() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0d131f] text-slate-100 flex flex-col font-sans selection:bg-teal-500 selection:text-white">
-      {/* Top Client Navbar */}
-      <header className="bg-[#111927]/90 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="relative group">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/20 ring-2 ring-teal-400/30">
-                <Stethoscope className="w-6 h-6 animate-pulse-subtle" />
-              </div>
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-[#111927] rounded-full animate-ping"></span>
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#111927] rounded-full"></span>
+    <div className={`min-h-screen w-full overflow-x-hidden transition-colors duration-200 ${
+      isDarkMode ? 'bg-[#0b0f19] text-slate-100 dark' : 'bg-slate-50 text-slate-800'
+    }`}>
+      {/* Top Navbar */}
+      <header className={`w-full border-b sticky top-0 z-40 transition-colors shadow-xs ${
+        isDarkMode ? 'bg-[#111827]/95 border-slate-800 backdrop-blur-md' : 'bg-white/95 border-slate-200 backdrop-blur-md'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Brand & Doctor Info */}
+          <div className="flex items-center space-x-3.5 min-w-0 flex-1">
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-md shadow-teal-500/20 shrink-0">
+              <Stethoscope className="w-5 h-5 animate-pulse-subtle" />
             </div>
 
-            <div>
-              <div className="flex items-center space-x-2.5">
-                <h1 className="font-extrabold text-xl text-white tracking-tight flex items-center">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className={`font-bold text-base sm:text-lg tracking-tight truncate ${
+                  isDarkMode ? 'text-white' : 'text-slate-900'
+                }`}>
                   {settings?.clinicName || 'Sunrise Multi-Speciality Clinic'}
                 </h1>
-                <span className="text-[11px] bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center shadow-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
-                  Client Ready v2.0
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30 shrink-0 flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                  Verified AI Engine
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 flex items-center space-x-2">
-                <span className="text-teal-400 font-medium">{settings?.doctorName || 'Dr. Mehta'}</span>
-                <span>•</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                <span className="font-semibold text-teal-600 dark:text-teal-400">{settings?.doctorName || 'Dr. Mehta'}</span>
+                <span className="mx-1.5">•</span>
                 <span>{settings?.doctorSpecialty || 'Dental Surgeon'}</span>
-                <span>•</span>
-                <span className="text-slate-400">10:00 AM - 6:00 PM IST</span>
+                <span className="mx-1.5">•</span>
+                <span>10:00 AM - 6:00 PM IST</span>
               </p>
             </div>
           </div>
 
-          {/* Quick Header Actions */}
-          <div className="flex items-center space-x-2.5">
+          {/* Quick Action Buttons & Theme Switcher */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               onClick={() => setActiveTab('client-demo')}
-              className="text-xs bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 px-3.5 py-2 rounded-xl flex items-center space-x-1.5 font-semibold transition shadow-md"
+              className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg flex items-center space-x-1.5 font-semibold transition"
             >
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>5-Min Owner Demo</span>
+              <Award className="w-3.5 h-3.5 text-amber-500" />
+              <span>5-Min Pitch</span>
             </button>
             <button
               onClick={handleRunReminders}
-              className="text-xs bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl flex items-center space-x-1.5 font-medium transition shadow-xs"
-              title="Execute 15-minute Auto-Reminder (Workflow 2)"
+              className={`text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1.5 font-medium transition border ${
+                isDarkMode 
+                  ? 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700' 
+                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+              }`}
+              title="Runs 15-minute auto-reminder check (Workflow 2)"
             >
-              <Bell className="w-3.5 h-3.5 text-teal-400" />
-              <span>Trigger Reminders</span>
+              <Bell className="w-3.5 h-3.5 text-teal-500" />
+              <span>Reminders</span>
             </button>
             <button
               onClick={handleRunDailyReport}
-              className="text-xs bg-teal-600 hover:bg-teal-500 text-white px-3.5 py-2 rounded-xl flex items-center space-x-1.5 font-semibold transition shadow-md shadow-teal-600/30"
-              title="Generate & Send 8 PM Executive Daily Report"
+              className="text-xs bg-teal-600 hover:bg-teal-500 text-white px-3 py-1.5 rounded-lg flex items-center space-x-1.5 font-semibold transition shadow-xs"
+              title="Generate 8:00 PM Daily Summary (Workflow 3)"
             >
               <Mail className="w-3.5 h-3.5" />
               <span>8 PM Report</span>
             </button>
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-1.5 rounded-lg border transition ${
+                isDarkMode 
+                  ? 'bg-slate-800 text-amber-400 border-slate-700 hover:bg-slate-700' 
+                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+              }`}
+              title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
+            >
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 border-t border-slate-800/60 overflow-x-auto">
+        {/* Tab Navigation */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
           {[
             { id: 'simulator', label: 'WhatsApp AI Simulator', icon: MessageSquare, badge: 'Live Bot' },
             { id: 'sheet', label: 'Google Sheets (Bookings Log)', icon: FileSpreadsheet, badge: `${appointments.length} Rows` },
-            { id: 'calendar', label: 'Calendar & 20-Min Slots', icon: Calendar, badge: 'IST Schedule' },
+            { id: 'calendar', label: 'Calendar & 20-Min Slots', icon: Calendar, badge: 'IST Grid' },
             { id: 'reports', label: 'Auto-Reminders & 8 PM Report', icon: Bell, badge: 'Cron Tasks' },
             { id: 'client-demo', label: 'Client Pitch & ROI Calculator', icon: TrendingUp, badge: 'Phase 9' },
             { id: 'branding', label: 'Clinic Customizer & Settings', icon: Sliders, badge: 'Rebrand' },
-            { id: 'guide', label: 'PDF Guide & n8n Workflows', icon: ShieldCheck, badge: 'Setup Manual' },
+            { id: 'guide', label: 'PDF Guide & n8n Workflows', icon: ShieldCheck, badge: 'Download JSON' },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -363,16 +383,18 @@ export default function ClinicApp() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 py-3 px-4 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap ${
+                className={`flex items-center space-x-2 py-2.5 px-3.5 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'border-teal-400 text-teal-300 bg-teal-950/30'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-300 bg-teal-50/50 dark:bg-teal-950/20'
+                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-teal-400' : 'text-slate-500'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                  isActive ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'bg-slate-800 text-slate-400'
+                  isActive 
+                    ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200' 
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                 }`}>
                   {tab.badge}
                 </span>
@@ -382,108 +404,133 @@ export default function ClinicApp() {
         </div>
       </header>
 
-      {/* Executive Metric Cards (Client Value Dashboard) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[#151f32] border border-slate-800 rounded-2xl p-4.5 shadow-lg relative overflow-hidden group hover:border-teal-500/40 transition">
+      {/* Executive Metric Cards */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className={`p-4 rounded-xl border shadow-xs transition ${
+            isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Bookings</span>
-              <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center">
-                <Users className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Active Bookings
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                <Users className="w-3.5 h-3.5" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-2xl font-black text-white">{activeBookings.length}</span>
-              <span className="text-xs font-bold text-emerald-400 flex items-center">
-                <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" /> +100% Automated
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{activeBookings.length}</span>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center">
+                <ArrowUpRight className="w-3 h-3 mr-0.5" /> +100% Automated
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">{cancelledBookings.length} cancelled • 0 double-bookings</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+              {cancelledBookings.length} cancelled • 0 slot conflicts
+            </p>
           </div>
 
-          <div className="bg-[#151f32] border border-slate-800 rounded-2xl p-4.5 shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition">
+          <div className={`p-4 rounded-xl border shadow-xs transition ${
+            isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Consultation Revenue</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <DollarSign className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Consultation Revenue
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <DollarSign className="w-3.5 h-3.5" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-2xl font-black text-white">₹{totalRevenue.toLocaleString('en-IN')}</span>
-              <span className="text-xs text-slate-400">calculated</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">₹{totalRevenue.toLocaleString('en-IN')}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">tracked</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Based on ₹{settings?.consultationFee || 500} avg doctor fee</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+              Based on ₹{settings?.consultationFee || 500} standard doctor fee
+            </p>
           </div>
 
-          <div className="bg-[#151f32] border border-slate-800 rounded-2xl p-4.5 shadow-lg relative overflow-hidden group hover:border-amber-500/40 transition">
+          <div className={`p-4 rounded-xl border shadow-xs transition ${
+            isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">No-Show Prevention</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                <Bell className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                No-Show Reduction
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Bell className="w-3.5 h-3.5" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-2xl font-black text-white">94.8%</span>
-              <span className="text-xs font-bold text-amber-400">Attendance</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">94.8%</span>
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Attendance</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">15-min WhatsApp templates (Workflow 2)</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+              Driven by 15-min WhatsApp templates (Workflow 2)
+            </p>
           </div>
 
-          <div className="bg-[#151f32] border border-slate-800 rounded-2xl p-4.5 shadow-lg relative overflow-hidden group hover:border-indigo-500/40 transition">
+          <div className={`p-4 rounded-xl border shadow-xs transition ${
+            isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Receptionist Hours Saved</span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-                <Clock className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Staff Hours Saved
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-2xl font-black text-white">2.5 Hrs</span>
-              <span className="text-xs text-indigo-400">per doctor / day</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">2.5 Hrs</span>
+              <span className="text-xs text-indigo-600 dark:text-indigo-400">per day</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Instant replies 24/7 without staff burnout</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+              Instant responses 24/7 without receptionist burnout
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Main Workspace Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
         {/* TAB 1: WHATSAPP AI SIMULATOR */}
         {activeTab === 'simulator' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 w-full">
             {/* Phone Mockup Window */}
-            <div className="lg:col-span-7 flex flex-col">
-              <div className="bg-[#111b21] rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col h-[740px] ring-1 ring-slate-800">
-                {/* Authentic WhatsApp Top Bar */}
-                <div className="bg-[#202c33] text-white px-4 py-3 flex items-center justify-between border-b border-[#2a3942]">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-600 flex items-center justify-center font-bold text-white shadow-md">
+            <div className="xl:col-span-7 flex flex-col w-full min-w-0">
+              <div className={`rounded-2xl border shadow-md overflow-hidden flex flex-col h-[700px] ${
+                isDarkMode ? 'bg-[#111b21] border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                {/* WhatsApp Top Bar */}
+                <div className="bg-[#075e54] text-white px-4 py-3 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="relative shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-emerald-800 flex items-center justify-center font-bold text-white text-xs border border-emerald-400">
                         {settings?.doctorName?.slice(0, 2) || 'SC'}
                       </div>
-                      <span className="w-3 h-3 bg-emerald-400 border-2 border-[#202c33] rounded-full absolute bottom-0 right-0"></span>
+                      <span className="w-2.5 h-2.5 bg-emerald-400 border-2 border-[#075e54] rounded-full absolute bottom-0 right-0"></span>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-sm leading-snug flex items-center">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-xs sm:text-sm leading-snug truncate">
                         {settings?.clinicName || 'Sunrise Clinic'}
-                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 ml-1.5 inline" />
                       </h3>
-                      <p className="text-[11px] text-emerald-400 flex items-center">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                        AI Medical Receptionist (Online)
+                      <p className="text-[11px] text-emerald-200 flex items-center truncate">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 shrink-0"></span>
+                        AI Receptionist (Online)
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <div className="bg-[#111b21] border border-[#2a3942] rounded-lg px-2.5 py-1 text-[11px] text-slate-300 font-mono">
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <span className="text-[10px] bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded font-mono">
                       +{simPhone}
-                    </div>
+                    </span>
                     <button
                       onClick={handleResetChat}
-                      className="p-1.5 rounded-lg bg-[#2a3942] hover:bg-[#374248] text-slate-300 transition"
+                      className="p-1 rounded hover:bg-emerald-800 text-emerald-100 transition"
                       title="Clear chat context memory"
                     >
-                      <RotateCcw className="w-4 h-4" />
+                      <RotateCcw className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -491,25 +538,25 @@ export default function ClinicApp() {
                 {/* WhatsApp Chat Canvas */}
                 <div
                   ref={chatScrollRef}
-                  className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-[#0b141a]"
+                  className={`flex-1 p-3.5 overflow-y-auto space-y-3 w-full ${
+                    isDarkMode ? 'bg-[#0b141a]' : 'bg-[#efeae2]/80'
+                  }`}
                   style={{
-                    backgroundImage: `radial-gradient(#202c33 1px, transparent 1px)`,
-                    backgroundSize: '18px 18px'
+                    backgroundImage: `radial-gradient(${isDarkMode ? '#202c33' : '#cbd5e1'} 1px, transparent 1px)`,
+                    backgroundSize: '16px 16px'
                   }}
                 >
-                  <div className="text-center my-1">
-                    <span className="text-[10px] bg-[#182229] text-amber-300/90 px-3.5 py-1 rounded-full border border-amber-500/20 shadow-xs inline-block max-w-md">
-                      🔒 End-to-end encrypted • AI operates under strict clinic rules, zero medical advice & emergency redirects.
+                  <div className="text-center my-1 px-2">
+                    <span className="text-[10px] bg-amber-50 dark:bg-[#182229] text-amber-800 dark:text-amber-300 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-500/20 shadow-xs inline-block max-w-full break-words">
+                      🔒 End-to-end encrypted • AI strictly applies clinic rules & emergency redirects.
                     </span>
                   </div>
 
                   {messages.length === 0 && (
-                    <div className="text-center text-slate-500 py-16">
-                      <MessageSquare className="w-10 h-10 mx-auto text-slate-600 mb-2 opacity-50" />
-                      <p className="text-sm font-medium text-slate-300">WhatsApp Simulator Ready</p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Click any test step from the right panel to test live booking!
-                      </p>
+                    <div className="text-center text-slate-500 dark:text-slate-400 py-16">
+                      <MessageSquare className="w-9 h-9 mx-auto text-slate-400 dark:text-slate-600 mb-2 opacity-50" />
+                      <p className="text-sm font-medium">WhatsApp AI Receptionist Ready</p>
+                      <p className="text-xs mt-1">Click any test step from the right panel to test live!</p>
                     </div>
                   )}
 
@@ -518,30 +565,32 @@ export default function ClinicApp() {
                     return (
                       <div
                         key={msg.id || idx}
-                        className={`flex flex-col ${isPatient ? 'items-end' : 'items-start'} transition-all`}
+                        className={`flex flex-col w-full ${isPatient ? 'items-end' : 'items-start'}`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm shadow-md ${
+                          className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs sm:text-sm shadow-xs break-words break-words-safe overflow-hidden ${
                             isPatient
-                              ? 'bg-[#005c4b] text-white rounded-tr-xs'
-                              : 'bg-[#202c33] text-slate-100 rounded-tl-xs border border-[#2a3942]'
+                              ? 'bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-tr-xs'
+                              : isDarkMode 
+                                ? 'bg-[#202c33] text-slate-100 rounded-tl-xs border border-[#2a3942]' 
+                                : 'bg-white text-slate-800 rounded-tl-xs border border-slate-200'
                           }`}
                         >
                           {msg.isVoiceNote ? (
-                            <div className="flex items-center space-x-3 py-1">
-                              <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center text-white">
-                                <Volume2 className="w-4 h-4" />
+                            <div className="flex items-center space-x-2 py-0.5">
+                              <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-white shrink-0">
+                                <Volume2 className="w-3.5 h-3.5" />
                               </div>
-                              <div className="flex items-center space-x-1">
-                                {[12, 24, 18, 30, 16, 26, 14, 20, 28, 15].map((h, bIdx) => (
+                              <div className="flex items-center space-x-0.5 shrink-0">
+                                {[10, 20, 15, 25, 12, 22, 14, 18].map((h, bIdx) => (
                                   <div
                                     key={bIdx}
-                                    className="w-1 bg-emerald-400 rounded-full"
+                                    className="w-1 bg-emerald-500 rounded-full"
                                     style={{ height: `${h}px` }}
                                   ></div>
                                 ))}
                               </div>
-                              <span className="text-[11px] text-slate-300 font-mono">{msg.audioDuration || '0:07'}</span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-300 font-mono">0:07</span>
                             </div>
                           ) : (
                             <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
@@ -551,19 +600,19 @@ export default function ClinicApp() {
                             <span>
                               {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {isPatient && <span className="text-teal-400 font-bold ml-1">✓✓</span>}
+                            {isPatient && <span className="text-emerald-600 dark:text-teal-400 font-bold ml-1">✓✓</span>}
                           </div>
                         </div>
 
                         {/* Tool Execution Tagging */}
                         {msg.toolsUsed && msg.toolsUsed.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {msg.toolsUsed.map((tool, tIdx) => (
                               <span
                                 key={tIdx}
-                                className="text-[10px] bg-teal-950/60 text-teal-300 font-mono px-2.5 py-0.5 rounded-full border border-teal-500/30 flex items-center shadow-xs"
+                                className="text-[9px] bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-mono px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-500/30 flex items-center"
                               >
-                                <Sparkles className="w-2.5 h-2.5 text-teal-400 mr-1" />
+                                <Sparkles className="w-2.5 h-2.5 text-teal-500 mr-1 shrink-0" />
                                 {tool}
                               </span>
                             ))}
@@ -574,21 +623,25 @@ export default function ClinicApp() {
                   })}
 
                   {isSimulating && (
-                    <div className="flex items-center space-x-2 bg-[#202c33] px-3.5 py-2.5 rounded-2xl border border-[#2a3942] w-36 shadow-md">
-                      <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce"></div>
-                      <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce [animation-delay:0.2s]"></div>
-                      <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce [animation-delay:0.4s]"></div>
-                      <span className="text-xs text-slate-300 font-medium">AI thinking...</span>
+                    <div className={`flex items-center space-x-2 px-3 py-2 rounded-xl border w-32 shadow-xs ${
+                      isDarkMode ? 'bg-[#202c33] border-[#2a3942]' : 'bg-white border-slate-200'
+                    }`}>
+                      <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-bounce [animation-delay:0.2s]"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-bounce [animation-delay:0.4s]"></div>
+                      <span className="text-xs text-slate-400 font-medium">Typing...</span>
                     </div>
                   )}
                 </div>
 
-                {/* WhatsApp Chat Input Controls */}
-                <div className="bg-[#202c33] p-3 border-t border-[#2a3942] flex items-center space-x-2">
+                {/* Input Bar */}
+                <div className={`p-2.5 border-t flex items-center space-x-2 ${
+                  isDarkMode ? 'bg-[#202c33] border-[#2a3942]' : 'bg-[#f0f2f5] border-slate-200'
+                }`}>
                   <button
-                    onClick={() => handleSendMessage("Audio note: Mujhe emergency appointment chahiye", true)}
-                    className="p-2.5 text-slate-400 hover:text-teal-400 hover:bg-[#2a3942] rounded-full transition"
-                    title="Simulate Voice Note (Phase 9.1 non-text rule)"
+                    onClick={() => handleSendMessage("Audio: Mujhe emergency appointment chahiye", true)}
+                    className="p-2 text-slate-400 hover:text-teal-500 rounded-full transition shrink-0"
+                    title="Simulate Voice Note (Phase 9.1)"
                   >
                     <Mic className="w-4 h-4" />
                   </button>
@@ -597,13 +650,17 @@ export default function ClinicApp() {
                     value={inputMessage}
                     onChange={e => setInputMessage(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Type patient message (Hinglish, Hindi, or English)..."
-                    className="flex-1 bg-[#2a3942] text-white placeholder-slate-400 border border-transparent rounded-full px-4 py-2.5 text-xs sm:text-sm focus:outline-hidden focus:border-teal-400"
+                    placeholder="Type message in Hinglish, Hindi, or English..."
+                    className={`flex-1 min-w-0 rounded-full px-3.5 py-2 text-xs sm:text-sm border focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode 
+                        ? 'bg-[#111b21] border-[#2a3942] text-white placeholder-slate-400' 
+                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                    }`}
                   />
                   <button
                     onClick={() => handleSendMessage()}
                     disabled={isSimulating || !inputMessage.trim()}
-                    className="bg-[#00a884] hover:bg-[#008f70] text-white p-2.5 rounded-full disabled:opacity-40 transition shadow-md"
+                    className="bg-[#075e54] hover:bg-[#064e46] text-white p-2 rounded-full disabled:opacity-40 transition shadow-xs shrink-0"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -612,50 +669,58 @@ export default function ClinicApp() {
             </div>
 
             {/* Right: Phase 5 Test Suite & Live Tool Inspector */}
-            <div className="lg:col-span-5 flex flex-col space-y-4">
+            <div className="xl:col-span-5 flex flex-col space-y-4 w-full min-w-0">
               {/* Phase 5 Test Script */}
-              <div className="bg-[#151f32] rounded-2xl border border-slate-800 p-5 shadow-xl">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                    <UserCheck className="w-4 h-4 text-teal-400" />
+              <div className={`rounded-2xl border p-4 shadow-xs ${
+                isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                  <h3 className={`font-bold text-xs sm:text-sm flex items-center space-x-1.5 ${
+                    isDarkMode ? 'text-white' : 'text-slate-900'
+                  }`}>
+                    <UserCheck className="w-4 h-4 text-teal-500" />
                     <span>Phase 5: 1-Click Verification Tests</span>
                   </h3>
-                  <span className="text-[11px] bg-teal-950/60 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-full font-mono">
-                    8 PDF Scenarios
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono px-2 py-0.5 rounded">
+                    8 PDF Steps
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  Click any test case to run the exact dialogue flow from page 12 of the setup guide:
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  Click any step to test dialogue rules from page 12 of the setup guide:
                 </p>
 
-                <div className="mt-3.5 space-y-2">
+                <div className="mt-2.5 space-y-2">
                   {[
-                    { num: 1, text: "Hi, mujhe kal doctor se appointment chahiye", label: "Step 1: Greeting + Consent", expected: "Consent line + asks name" },
-                    { num: 2, text: "Rahul Sharma", label: "Step 2: Patient Full Name", expected: "Asks 1-line problem" },
-                    { num: 3, text: "Daant me dard hai", label: "Step 3: Medical Problem", expected: "Calls get_day_events, presents slots" },
-                    { num: 4, text: "11:20 AM", label: "Step 4: Select Slot Time", expected: "Calls check_slot_available, books & logs" },
-                    { num: 5, text: "Mujhe seene me dard hai aur saans nahi aa rahi", label: "Step 7: Emergency Rule", expected: "Halts booking, provides emergency hotline" },
-                    { num: 6, text: "Meri appointment cancel kar do", label: "Step 8: Cancel Appointment", expected: "Calls find_my_booking, deletes & updates Sheet" },
+                    { num: 1, text: "Hi, mujhe kal doctor se appointment chahiye", label: "Step 1: Greeting + Consent Notice" },
+                    { num: 2, text: "Rahul Sharma", label: "Step 2: Patient Full Name" },
+                    { num: 3, text: "Daant me dard hai", label: "Step 3: Medical Problem & Slot Search" },
+                    { num: 4, text: "11:20 AM", label: "Step 4: Select Slot & Confirm Booking" },
+                    { num: 5, text: "Mujhe seene me dard hai aur saans nahi aa rahi", label: "Step 7: Emergency Protection Rule" },
+                    { num: 6, text: "Meri appointment cancel kar do", label: "Step 8: Cancel Appointment Request" },
                   ].map(test => (
                     <button
                       key={test.num}
                       onClick={() => handleSendMessage(test.text)}
                       disabled={isSimulating}
-                      className="w-full text-left p-3 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-teal-500 hover:bg-teal-950/20 transition-all group flex items-start space-x-2.5"
+                      className={`w-full text-left p-2.5 rounded-xl border transition-all group flex items-start space-x-2.5 min-w-0 ${
+                        isDarkMode 
+                          ? 'bg-slate-900/60 border-slate-800 hover:border-teal-500 hover:bg-teal-950/20' 
+                          : 'bg-slate-50 border-slate-200 hover:border-teal-500 hover:bg-teal-50/50'
+                      }`}
                     >
-                      <span className="text-xs font-bold bg-slate-800 text-teal-400 group-hover:bg-teal-500 group-hover:text-slate-900 px-2 py-0.5 rounded-md mt-0.5 transition">
+                      <span className="text-xs font-bold bg-slate-200 dark:bg-slate-800 text-teal-700 dark:text-teal-400 px-1.5 py-0.5 rounded-md shrink-0 mt-0.5">
                         #{test.num}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-slate-200 group-hover:text-teal-300 truncate">
+                          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 truncate">
                             {test.label}
                           </span>
-                          <span className="text-[10px] text-teal-400 font-semibold group-hover:translate-x-0.5 transition-transform">
+                          <span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold shrink-0 ml-1">
                             Send &gt;
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 italic truncate mt-0.5">"{test.text}"</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate mt-0.5">"{test.text}"</p>
                       </div>
                     </button>
                   ))}
@@ -663,40 +728,49 @@ export default function ClinicApp() {
               </div>
 
               {/* Real-time Tool Call Inspector */}
-              <div className="bg-[#151f32] rounded-2xl border border-slate-800 p-5 shadow-xl flex-1 overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 text-teal-400" />
+              <div className={`rounded-2xl border p-4 shadow-xs flex-1 overflow-hidden flex flex-col ${
+                isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <h3 className={`font-bold text-xs sm:text-sm flex items-center space-x-1.5 ${
+                    isDarkMode ? 'text-white' : 'text-slate-900'
+                  }`}>
+                    <Sparkles className="w-4 h-4 text-teal-500" />
                     <span>Real-Time Tool Execution Log</span>
                   </h3>
-                  <span className="text-[10px] bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded">
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono px-2 py-0.5 rounded">
                     7 Tools Monitored
                   </span>
                 </div>
 
-                <div className="mt-3 flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-56">
+                <div className="mt-2.5 flex-1 overflow-y-auto space-y-2 pr-1 max-h-52">
                   {toolLogs.length === 0 ? (
-                    <p className="text-xs text-slate-500 italic text-center py-8">
+                    <p className="text-xs text-slate-400 italic text-center py-6">
                       No tool executions logged yet. Send a booking message in chat!
                     </p>
                   ) : (
                     toolLogs.map((log, lIdx) => (
-                      <div key={lIdx} className="bg-slate-900/80 rounded-xl p-3 border border-slate-800 text-xs font-mono">
-                        <div className="flex items-center justify-between text-teal-400 font-bold mb-1.5">
-                          <span className="flex items-center">
-                            <CheckCircle className="w-3 h-3 text-teal-400 mr-1.5" />
-                            {log.name}()
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-sans">
+                      <div key={lIdx} className={`rounded-lg p-2.5 border text-xs font-mono min-w-0 ${
+                        isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <div className="flex items-center justify-between text-teal-600 dark:text-teal-400 font-bold mb-1">
+                          <span className="truncate">{log.name}()</span>
+                          <span className="text-[10px] text-slate-400 font-sans shrink-0 ml-1">
                             {new Date(log.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-300 bg-[#0d131f] p-2 rounded-lg border border-slate-800 overflow-x-auto">
-                          <span className="text-slate-400 font-sans font-medium">Args: </span>
+                        <div className={`text-[10px] p-1.5 rounded border overflow-hidden break-all break-words-safe ${
+                          isDarkMode ? 'bg-[#0d131f] border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-700'
+                        }`}>
+                          <span className="text-slate-400 font-sans font-medium">Input: </span>
                           {JSON.stringify(log.params)}
                         </div>
-                        <div className="text-[11px] text-emerald-300 bg-emerald-950/20 p-2 rounded-lg border border-emerald-900/40 mt-1.5 overflow-x-auto">
-                          <span className="text-emerald-500 font-sans font-medium">Result: </span>
+                        <div className={`text-[10px] p-1.5 rounded border mt-1 overflow-hidden break-all break-words-safe ${
+                          isDarkMode 
+                            ? 'bg-emerald-950/20 border-emerald-900/40 text-emerald-300' 
+                            : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        }`}>
+                          <span className="font-sans font-medium opacity-75">Result: </span>
                           {JSON.stringify(log.result)}
                         </div>
                       </div>
@@ -710,32 +784,42 @@ export default function ClinicApp() {
 
         {/* TAB 2: GOOGLE SHEETS LIVE VIEW */}
         {activeTab === 'sheet' && (
-          <div className="bg-[#151f32] rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
-            <div className="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+          <div className={`rounded-2xl border shadow-xs overflow-hidden ${
+            isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+          }`}>
+            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
-                  <h2 className="text-lg font-bold text-white">Google Sheet: Clinic Appointments Log (Tab: Bookings)</h2>
+                  <h2 className={`text-base sm:text-lg font-bold truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Google Sheet: Clinic Appointments Log (Bookings)
+                  </h2>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  Headers strictly match Phase 1.4: <span className="font-mono text-teal-300">Start_ISO | Date | Time | Patient_Name | Phone | Problem | Status | Event_ID | Reminder_Sent</span>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  Headers strictly match Phase 1.4: <span className="font-mono text-teal-600 dark:text-teal-300">Start_ISO | Date | Time | Patient_Name | Phone | Problem | Status | Event_ID | Reminder_Sent</span>
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <input
                   type="text"
-                  placeholder="Search patient, phone..."
+                  placeholder="Search log..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-xs rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-hidden focus:border-teal-400"
+                  className={`text-xs rounded-lg px-3 py-1.5 border focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                    isDarkMode 
+                      ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500' 
+                      : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value as any)}
-                  className="bg-slate-900 border border-slate-700 text-xs rounded-xl px-3 py-2 text-slate-200 focus:outline-hidden focus:border-teal-400"
+                  className={`text-xs rounded-lg px-2.5 py-1.5 border focus:outline-hidden ${
+                    isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-300 text-slate-700'
+                  }`}
                 >
                   <option value="All">All Statuses</option>
                   <option value="Booked">Booked</option>
@@ -744,95 +828,104 @@ export default function ClinicApp() {
                 </select>
                 <button
                   onClick={exportCSV}
-                  className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-3.5 py-2 rounded-xl flex items-center space-x-1.5 transition border border-slate-700"
+                  className={`text-xs font-medium px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition border ${
+                    isDarkMode 
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700' 
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  }`}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Export CSV</span>
+                  <span>CSV</span>
                 </button>
                 <button
                   onClick={fetchData}
-                  className="text-xs bg-teal-600 hover:bg-teal-500 text-white font-medium px-3.5 py-2 rounded-xl flex items-center space-x-1.5 transition shadow-sm"
+                  className="text-xs bg-teal-600 hover:bg-teal-500 text-white font-medium px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition shadow-xs"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Sync Sheet</span>
+                  <span>Sync</span>
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+            {/* Responsive Table Wrapper */}
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs min-w-[950px]">
                 <thead>
-                  <tr className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800">
-                    <th className="p-3.5 border-r border-slate-800">#</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Start_ISO (Col A)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Date (Col B)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Time (Col C)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Patient_Name (Col D)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Phone (Col E)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Problem (Col F)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Status (Col G)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Event_ID (Col H)</th>
-                    <th className="p-3.5 border-r border-slate-800 font-mono">Reminder_Sent (Col I)</th>
-                    <th className="p-3.5 text-center">Actions</th>
+                  <tr className={`font-semibold border-b ${
+                    isDarkMode 
+                      ? 'bg-slate-900/80 text-slate-400 border-slate-800' 
+                      : 'bg-slate-50 text-slate-600 border-slate-200'
+                  }`}>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 w-10">#</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Start_ISO (Col A)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Date (Col B)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Time (Col C)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Patient_Name (Col D)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Phone (Col E)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Problem (Col F)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Status (Col G)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Event_ID (Col H)</th>
+                    <th className="p-3 border-r border-slate-200 dark:border-slate-800 font-mono">Reminder_Sent (Col I)</th>
+                    <th className="p-3 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 font-mono">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
                   {filteredAppointments.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-slate-500 font-sans">
+                      <td colSpan={11} className="p-8 text-center text-slate-400 font-sans">
                         No appointments found matching your search. Book an appointment in the simulator!
                       </td>
                     </tr>
                   ) : (
                     filteredAppointments.map((apt, index) => (
-                      <tr key={apt.id || index} className="hover:bg-slate-900/60 transition">
-                        <td className="p-3.5 text-slate-500 border-r border-slate-800 font-sans">{index + 1}</td>
-                        <td className="p-3.5 border-r border-slate-800 text-slate-300 whitespace-nowrap">{apt.Start_ISO}</td>
-                        <td className="p-3.5 border-r border-slate-800 text-slate-300 whitespace-nowrap">{apt.Date}</td>
-                        <td className="p-3.5 border-r border-slate-800 font-bold text-teal-300 whitespace-nowrap">{apt.Time}</td>
-                        <td className="p-3.5 border-r border-slate-800 font-sans font-medium text-white whitespace-nowrap">{apt.Patient_Name}</td>
-                        <td className="p-3.5 border-r border-slate-800 text-slate-400 whitespace-nowrap">{apt.Phone}</td>
-                        <td className="p-3.5 border-r border-slate-800 font-sans text-slate-300 max-w-xs truncate">{apt.Problem}</td>
-                        <td className="p-3.5 border-r border-slate-800 font-sans">
+                      <tr key={apt.id || index} className={`transition ${
+                        isDarkMode ? 'hover:bg-slate-900/60' : 'hover:bg-slate-50'
+                      }`}>
+                        <td className="p-3 text-slate-400 border-r border-slate-200 dark:border-slate-800 font-sans">{index + 1}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">{apt.Start_ISO}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">{apt.Date}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-bold text-teal-600 dark:text-teal-300 whitespace-nowrap">{apt.Time}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans font-medium whitespace-nowrap">{apt.Patient_Name}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">{apt.Phone}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans max-w-xs truncate">{apt.Problem}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                            className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                               apt.Status === 'Booked'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-500/30'
                                 : apt.Status === 'Cancelled'
-                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-500/30'
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-500/30'
                             }`}
                           >
                             {apt.Status}
                           </span>
                         </td>
-                        <td className="p-3.5 border-r border-slate-800 text-indigo-400 font-semibold whitespace-nowrap">{apt.Event_ID}</td>
-                        <td className="p-3.5 border-r border-slate-800 text-center font-sans">
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 text-indigo-600 dark:text-indigo-400 font-semibold whitespace-nowrap">{apt.Event_ID}</td>
+                        <td className="p-3 border-r border-slate-200 dark:border-slate-800 text-center font-sans">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
+                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                               apt.Reminder_Sent === 'Yes'
-                                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
                             }`}
                           >
                             {apt.Reminder_Sent}
                           </span>
                         </td>
-                        <td className="p-3.5 text-center whitespace-nowrap font-sans">
+                        <td className="p-3 text-center whitespace-nowrap font-sans">
                           <div className="flex items-center justify-center space-x-2">
                             {apt.Status === 'Booked' && (
                               <>
                                 <button
                                   onClick={() => handleUpdateAppointmentStatus(apt.Event_ID, 'Completed')}
-                                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
-                                  title="Mark Completed"
+                                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
                                 >
                                   Complete
                                 </button>
                                 <button
                                   onClick={() => handleUpdateAppointmentStatus(apt.Event_ID, 'Cancelled')}
-                                  className="text-xs text-rose-400 hover:text-rose-300 font-medium"
-                                  title="Cancel Slot"
+                                  className="text-xs text-rose-600 dark:text-rose-400 hover:underline font-medium"
                                 >
                                   Cancel
                                 </button>
@@ -841,7 +934,7 @@ export default function ClinicApp() {
                             {apt.Status === 'Cancelled' && (
                               <button
                                 onClick={() => handleUpdateAppointmentStatus(apt.Event_ID, 'Booked')}
-                                className="text-xs text-teal-400 hover:text-teal-300 font-medium"
+                                className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium"
                               >
                                 Reopen
                               </button>
@@ -859,32 +952,34 @@ export default function ClinicApp() {
 
         {/* TAB 3: CALENDAR & SLOTS */}
         {activeTab === 'calendar' && (
-          <div className="space-y-6">
-            <div className="bg-[#151f32] rounded-2xl border border-slate-800 p-6 shadow-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800">
-                <div>
-                  <div className="flex items-center space-x-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-                      <CalendarCheck className="w-4 h-4" />
-                    </div>
-                    <h2 className="text-lg font-bold text-white">
+          <div className="space-y-5 w-full min-w-0">
+            <div className={`rounded-2xl border p-5 shadow-xs ${
+              isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-2">
+                    <CalendarCheck className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+                    <h2 className={`text-base sm:text-lg font-bold truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                       {settings?.clinicName} Live Slot Calendar
                     </h2>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Operating Hours: Mon-Sat, 10:00 AM - 6:00 PM IST | Slot Duration: {settings?.slotDurationMinutes || 20} mins | Lunch Break: 1:00 PM - 2:00 PM
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    Hours: Mon-Sat, 10:00 AM - 6:00 PM IST | Slot Duration: {settings?.slotDurationMinutes || 20} min | Lunch: 1:00 PM - 2:00 PM
                   </p>
                 </div>
-                <div className="flex items-center space-x-2.5">
+                <div className="shrink-0">
                   <button
                     onClick={() => {
                       const todayStr = new Date().toISOString().split('T')[0];
                       handleToggleClosedDate(todayStr);
                     }}
-                    className={`text-xs px-4 py-2 rounded-xl font-semibold border transition shadow-sm ${
+                    className={`text-xs px-3.5 py-2 rounded-xl font-semibold border transition ${
                       closedDates.includes(new Date().toISOString().split('T')[0])
-                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 font-bold'
-                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-600 dark:text-rose-300 font-bold'
+                        : isDarkMode
+                          ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                          : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     {closedDates.includes(new Date().toISOString().split('T')[0])
@@ -895,17 +990,19 @@ export default function ClinicApp() {
               </div>
 
               {/* 20-min Slot Timeline */}
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-sm text-white">Today's 20-Minute Slots Grid</h3>
-                  <div className="flex items-center space-x-3 text-xs text-slate-400 font-normal">
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 rounded bg-emerald-500 mr-1.5"></span> Booked</span>
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 rounded bg-slate-700 mr-1.5"></span> Available</span>
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 rounded bg-amber-500/40 mr-1.5"></span> Lunch (1-2 PM)</span>
+              <div className="mt-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <h3 className={`font-bold text-xs sm:text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Today's 20-Minute Slots Grid
+                  </h3>
+                  <div className="flex items-center space-x-3 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center"><span className="w-2.5 h-2.5 rounded bg-emerald-500 mr-1.5 shrink-0"></span> Booked</span>
+                    <span className="flex items-center"><span className="w-2.5 h-2.5 rounded bg-slate-300 dark:bg-slate-700 mr-1.5 shrink-0"></span> Free</span>
+                    <span className="flex items-center"><span className="w-2.5 h-2.5 rounded bg-amber-400 mr-1.5 shrink-0"></span> Lunch (1-2 PM)</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                   {[
                     "10:00 AM", "10:20 AM", "10:40 AM",
                     "11:00 AM", "11:20 AM", "11:40 AM",
@@ -922,34 +1019,44 @@ export default function ClinicApp() {
                       a => a.Status === 'Booked' && (a.Time === cleanTime || a.Time.startsWith(timeLabel.slice(0, 5)))
                     );
 
-                    let cardClass = "bg-slate-900/60 border-slate-800 text-slate-200 hover:border-slate-700";
-                    if (isLunch) cardClass = "bg-amber-950/20 border-amber-900/40 text-amber-400";
-                    else if (bookedApt) cardClass = "bg-emerald-950/30 border-emerald-500/40 text-emerald-300 shadow-md";
+                    let cardClass = isDarkMode
+                      ? 'bg-slate-900/60 border-slate-800 text-slate-200'
+                      : 'bg-white border-slate-200 text-slate-800 shadow-2xs';
+
+                    if (isLunch) {
+                      cardClass = isDarkMode 
+                        ? 'bg-amber-950/20 border-amber-900/40 text-amber-400' 
+                        : 'bg-amber-50/70 border-amber-200 text-amber-800';
+                    } else if (bookedApt) {
+                      cardClass = isDarkMode 
+                        ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300' 
+                        : 'bg-emerald-50 border-emerald-300 text-emerald-900';
+                    }
 
                     return (
                       <div
                         key={idx}
-                        className={`p-3.5 rounded-xl border flex flex-col justify-between text-xs min-h-[82px] transition ${cardClass}`}
+                        className={`p-3 rounded-xl border flex flex-col justify-between text-xs min-h-[76px] transition overflow-hidden min-w-0 ${cardClass}`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs">{cleanTime}</span>
+                          <span className="font-bold text-xs truncate">{cleanTime}</span>
                           {bookedApt ? (
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                           ) : isLunch ? (
-                            <span className="text-[10px] text-amber-400 font-semibold">Break</span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold shrink-0">Break</span>
                           ) : (
-                            <span className="text-[10px] text-slate-500">Free</span>
+                            <span className="text-[10px] text-slate-400 shrink-0">Free</span>
                           )}
                         </div>
                         {bookedApt ? (
-                          <div className="mt-1">
-                            <p className="font-semibold text-white truncate">{bookedApt.Patient_Name}</p>
-                            <p className="text-[10px] text-emerald-400/80 truncate">{bookedApt.Problem}</p>
+                          <div className="mt-1 min-w-0">
+                            <p className="font-semibold truncate">{bookedApt.Patient_Name}</p>
+                            <p className="text-[10px] opacity-75 truncate">{bookedApt.Problem}</p>
                           </div>
                         ) : isLunch ? (
-                          <p className="text-[10px] text-amber-500/70 italic">Lunch pause</p>
+                          <p className="text-[10px] opacity-70 italic truncate">1-2 PM Pause</p>
                         ) : (
-                          <p className="text-[10px] text-slate-500">Available</p>
+                          <p className="text-[10px] text-slate-400 truncate">20 min slot</p>
                         )}
                       </div>
                     );
@@ -962,111 +1069,120 @@ export default function ClinicApp() {
 
         {/* TAB 4: AUTO-REMINDER & DAILY 8 PM REPORT */}
         {activeTab === 'reports' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
             {/* Auto Reminder Card (Workflow 2) */}
-            <div className="bg-[#151f32] rounded-2xl border border-slate-800 p-6 shadow-xl flex flex-col">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                    <Bell className="w-5 h-5" />
+            <div className={`rounded-2xl border p-5 shadow-xs flex flex-col min-w-0 ${
+              isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Bell className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white text-sm">Workflow 2: Auto Reminder Engine</h3>
-                    <p className="text-[11px] text-slate-400">15-minute scheduler (30-75 min window)</p>
+                  <div className="min-w-0">
+                    <h3 className={`font-bold text-sm truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      Workflow 2: Auto Reminder Engine
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">15-minute scheduler (30-75 min window)</p>
                   </div>
                 </div>
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30 shrink-0">
                   Active
                 </span>
               </div>
 
-              <div className="mt-4 text-xs text-slate-300 space-y-3 flex-1">
-                <p>
-                  Scans Google Sheet Bookings for patients with <span className="font-mono bg-slate-900 text-teal-300 px-1.5 py-0.5 rounded border border-slate-800">Status = Booked</span> and <span className="font-mono bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded border border-slate-800">Reminder_Sent = No</span>.
+              <div className="mt-3.5 text-xs text-slate-600 dark:text-slate-300 space-y-2.5 flex-1 min-w-0">
+                <p className="break-words">
+                  Scans Google Sheet Bookings for patients with <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">Status = Booked</span> and <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">Reminder_Sent = No</span>.
                 </p>
 
                 {/* WhatsApp Template Card Preview */}
-                <div className="bg-[#0b141a] p-4 rounded-xl border border-slate-800 shadow-inner">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-teal-400">
-                    Approved WhatsApp Template: appointment_reminder
+                <div className={`p-3.5 rounded-xl border ${
+                  isDarkMode ? 'bg-[#0b141a] border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-teal-600 dark:text-teal-400 block mb-1">
+                    Meta Utility Template: appointment_reminder
                   </span>
-                  <div className="bg-[#202c33] p-3 rounded-lg border border-[#2a3942] text-xs text-slate-200 mt-2 space-y-1">
-                    <p className="font-semibold text-white">
-                      Hello Rahul Sharma, this is a reminder from {settings?.clinicName}.
-                    </p>
-                    <p className="text-slate-300">
-                      Your appointment is today at 11:20 AM with {settings?.doctorName}. To reschedule or cancel, please reply to this message.
-                    </p>
+                  <div className={`p-2.5 rounded-lg border text-xs leading-relaxed break-words ${
+                    isDarkMode ? 'bg-[#202c33] border-[#2a3942] text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                  }`}>
+                    Hello Rahul Sharma, this is a reminder from {settings?.clinicName}. Your appointment is today at 11:20 AM with {settings?.doctorName}. To reschedule or cancel, please reply to this message.
                   </div>
                 </div>
 
                 {reminderResult && (
-                  <div className="bg-emerald-950/30 p-3.5 rounded-xl border border-emerald-500/30 text-emerald-300 mt-2">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300">
                     <p className="font-bold flex items-center">
-                      <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-500 shrink-0" />
                       15-Min Scheduler Executed!
                     </p>
-                    <p className="text-[11px] mt-1 text-slate-300">
+                    <p className="text-[11px] mt-0.5">
                       Checked: {reminderResult.processed} bookings | Reminders sent: {reminderResult.sentCount}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between">
-                <span className="text-[11px] text-slate-500 font-mono">Endpoint: /api/cron/reminders</span>
+              <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 font-mono truncate mr-2">/api/cron/reminders</span>
                 <button
                   onClick={handleRunReminders}
-                  className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center space-x-1.5 transition shadow-lg shadow-amber-600/20"
+                  className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg flex items-center space-x-1.5 transition shadow-xs shrink-0"
                 >
                   <Bell className="w-3.5 h-3.5" />
-                  <span>Execute 15-Min Scan Now</span>
+                  <span>Execute Scan</span>
                 </button>
               </div>
             </div>
 
             {/* Daily Owner Report Card (Workflow 3) */}
-            <div className="bg-[#151f32] rounded-2xl border border-slate-800 p-6 shadow-xl flex flex-col">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center">
-                    <Mail className="w-5 h-5" />
+            <div className={`rounded-2xl border p-5 shadow-xs flex flex-col min-w-0 ${
+              isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white text-sm">Workflow 3: Daily Owner Report</h3>
-                    <p className="text-[11px] text-slate-400">Scheduled daily at 8:00 PM IST</p>
+                  <div className="min-w-0">
+                    <h3 className={`font-bold text-sm truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      Workflow 3: Daily Owner Report
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">Scheduled daily at 8:00 PM IST</p>
                   </div>
                 </div>
-                <span className="text-xs bg-teal-500/10 text-teal-400 font-semibold px-2.5 py-0.5 rounded-full border border-teal-500/30">
+                <span className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-500/10 dark:text-teal-400 font-semibold px-2 py-0.5 rounded-full border border-teal-500/30 shrink-0">
                   Ready
                 </span>
               </div>
 
-              <div className="mt-4 flex-1 flex flex-col">
-                <p className="text-xs text-slate-400 mb-2.5">
-                  Automated email dispatched to clinic owner: <span className="font-medium text-teal-300">{settings?.ownerEmail}</span>
+              <div className="mt-3.5 flex-1 flex flex-col min-w-0">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 truncate">
+                  Dispatched to: <span className="font-medium text-teal-600 dark:text-teal-300">{settings?.ownerEmail}</span>
                 </p>
 
-                <div className="bg-[#0b141a] text-slate-200 p-4 rounded-xl font-mono text-[11px] flex-1 overflow-y-auto whitespace-pre-line min-h-[180px] border border-slate-800 leading-relaxed shadow-inner">
+                <div className={`p-3 rounded-xl font-mono text-[11px] flex-1 overflow-x-auto whitespace-pre-wrap break-words min-h-[170px] border leading-relaxed ${
+                  isDarkMode ? 'bg-[#0b141a] text-slate-200 border-slate-800' : 'bg-slate-900 text-slate-100 border-slate-800'
+                }`}>
                   {dailyReport || `Click "Generate & Send Report" below to preview the Phase 7.2 formatted summary.`}
                 </div>
 
                 {emailStatus && (
-                  <p className="text-[11px] text-emerald-400 font-medium mt-2 flex items-center">
-                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-2 flex items-center truncate">
+                    <CheckCircle className="w-3.5 h-3.5 mr-1 shrink-0" />
                     {emailStatus}
                   </p>
                 )}
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between">
-                <span className="text-[11px] text-slate-500 font-mono">Endpoint: /api/cron/daily-report</span>
+              <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 font-mono truncate mr-2">/api/cron/daily-report</span>
                 <button
                   onClick={handleRunDailyReport}
-                  className="bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center space-x-1.5 transition shadow-lg shadow-teal-600/20"
+                  className="bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg flex items-center space-x-1.5 transition shadow-xs shrink-0"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Generate & Send Report</span>
+                  <span>Generate Report</span>
                 </button>
               </div>
             </div>
@@ -1075,41 +1191,45 @@ export default function ClinicApp() {
 
         {/* TAB 5: CLIENT PRESENTATION & 5-MIN DEMO SUITE */}
         {activeTab === 'client-demo' && (
-          <div className="space-y-6">
-            {/* 5-Minute Live Pitch Card (Phase 9.2) */}
-            <div className="bg-gradient-to-tr from-[#151f32] to-[#1a2844] rounded-3xl border border-slate-700/60 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-2 max-w-2xl">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs uppercase font-extrabold tracking-widest text-teal-400 bg-teal-950/60 border border-teal-500/30 px-3 py-1 rounded-full">
-                      Phase 9.2: Clinic Owner 5-Minute Demo
-                    </span>
-                  </div>
-                  <h2 className="text-2xl font-black text-white">How to Win the Clinic Owner in 5 Minutes</h2>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <div className="space-y-5 w-full min-w-0">
+            {/* 5-Minute Pitch Card */}
+            <div className={`rounded-2xl border p-5 sm:p-6 shadow-xs ${
+              isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-teal-600 dark:text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded-full border border-teal-500/30">
+                    Phase 9.2: Clinic Owner 5-Minute Demo
+                  </span>
+                  <h2 className={`text-xl sm:text-2xl font-bold truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    How to Win the Clinic Owner in 5 Minutes
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
                     Follow the exact 5-step demonstration script from the setup guide. Clinic owners immediately appreciate the automated daily email report and zero no-show reminders.
                   </p>
                 </div>
 
-                <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-700 space-y-3 min-w-[280px]">
-                  <h4 className="text-xs font-bold text-white flex items-center justify-between">
-                    <span>Doctor Outreach Template</span>
+                <div className={`p-3.5 rounded-xl border w-full lg:w-96 shrink-0 ${
+                  isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">Doctor Outreach Template</span>
                     <button
                       onClick={copyPitchText}
-                      className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold flex items-center space-x-1"
+                      className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold flex items-center space-x-1"
                     >
                       {copiedPitch ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedPitch ? 'Copied!' : 'Copy'}</span>
+                      <span>{copiedPitch ? 'Copied' : 'Copy'}</span>
                     </button>
-                  </h4>
-                  <p className="text-[11px] text-slate-300 italic bg-[#0b141a] p-3 rounded-xl border border-slate-800 leading-relaxed">
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 italic leading-relaxed break-words">
                     "Namaste Dr. {settings?.doctorName || '<Name>'}, main clinics ke liye WhatsApp appointment automation banata hoon. Patient WhatsApp par message kare to system khud naam, problem aur date puchkar Google Calendar me slot book kar deta hai, reminder bhejta hai aur aapko roz report deta hai. Kya main 5 minute ka live demo dikha sakta hoon? Koi cost nahi."
                   </p>
                 </div>
               </div>
 
               {/* 5 Demo Steps */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mt-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mt-5">
                 {[
                   { step: "1", title: "Setup Demo Data", desc: "Have 2-3 sample booked slots on clinic calendar" },
                   { step: "2", title: "Live Patient Message", desc: "Message test number in front of owner to book a slot" },
@@ -1117,78 +1237,89 @@ export default function ClinicApp() {
                   { step: "4", title: "Show Google Sheet", desc: "Show 9-column log with Status = Booked" },
                   { step: "5", title: "Sample Daily Email", desc: "Show 8 PM summary email — owners love this most!" },
                 ].map((s, idx) => (
-                  <div key={idx} className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-                    <span className="text-xs font-extrabold bg-teal-500/20 text-teal-300 px-2.5 py-1 rounded-lg">
+                  <div key={idx} className={`p-3 rounded-xl border ${
+                    isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <span className="text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300 px-2 py-0.5 rounded">
                       Step {s.step}
                     </span>
-                    <h4 className="font-bold text-xs text-white mt-2.5">{s.title}</h4>
-                    <p className="text-[11px] text-slate-400 mt-1">{s.desc}</p>
+                    <h4 className={`font-bold text-xs mt-1.5 truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{s.title}</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{s.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Interactive Pricing Worksheet & ROI Calculator (Phase 9.3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-6 bg-[#151f32] rounded-2xl border border-slate-800 p-6 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4 text-emerald-400" />
+            {/* Pricing & Handover */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+              <div className={`lg:col-span-6 rounded-2xl border p-5 shadow-xs space-y-3.5 min-w-0 ${
+                isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                  <h3 className={`font-bold text-xs sm:text-sm flex items-center space-x-1.5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <DollarSign className="w-4 h-4 text-emerald-500" />
                     <span>Phase 9.3: Clinic Quote Calculator</span>
                   </h3>
-                  <span className="text-[11px] text-slate-400 font-mono">Standard Market Rates</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Market Rates</span>
                 </div>
 
-                <div className="space-y-4 text-xs">
+                <div className="space-y-3 text-xs">
                   <div>
-                    <label className="text-slate-400 block mb-1">One-Time Setup Fee (₹):</label>
+                    <label className="text-slate-600 dark:text-slate-400 block mb-1">One-Time Setup Fee (₹):</label>
                     <input
                       type="number"
                       value={quoteSetupFee}
                       onChange={e => setQuoteSetupFee(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-mono font-bold"
+                      className={`w-full border rounded-lg p-2 font-mono font-bold ${
+                        isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                      }`}
                     />
-                    <span className="text-[10px] text-slate-500">Guide recommendation: ₹20,000 to ₹25,000</span>
+                    <span className="text-[10px] text-slate-400">Guide recommendation: ₹20,000 to ₹25,000</span>
                   </div>
 
                   <div>
-                    <label className="text-slate-400 block mb-1">Monthly Maintenance Fee (₹/month):</label>
+                    <label className="text-slate-600 dark:text-slate-400 block mb-1">Monthly Maintenance Fee (₹/month):</label>
                     <input
                       type="number"
                       value={quoteMonthlyFee}
                       onChange={e => setQuoteMonthlyFee(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-mono font-bold"
+                      className={`w-full border rounded-lg p-2 font-mono font-bold ${
+                        isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                      }`}
                     />
-                    <span className="text-[10px] text-slate-500">Includes token/template monitoring, prompt changes</span>
                   </div>
 
                   <div>
-                    <label className="text-slate-400 block mb-1">Estimated Daily Patient Volume:</label>
+                    <label className="text-slate-600 dark:text-slate-400 block mb-1">Estimated Daily Patient Volume:</label>
                     <input
                       type="number"
                       value={quotePatientsPerDay}
                       onChange={e => setQuotePatientsPerDay(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-mono font-bold"
+                      className={`w-full border rounded-lg p-2 font-mono font-bold ${
+                        isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                      }`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Client Handover Checklist (Phase 9.4) */}
-              <div className="lg:col-span-6 bg-[#151f32] rounded-2xl border border-slate-800 p-6 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-teal-400" />
+              {/* Client Handover Checklist */}
+              <div className={`lg:col-span-6 rounded-2xl border p-5 shadow-xs space-y-3 min-w-0 ${
+                isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                  <h3 className={`font-bold text-xs sm:text-sm flex items-center space-x-1.5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <ShieldCheck className="w-4 h-4 text-teal-500" />
                     <span>Phase 9.4: Client Handover Checklist</span>
                   </h3>
-                  <span className="text-[11px] text-slate-400 font-mono">Delivery Gates</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Delivery Gates</span>
                 </div>
 
-                <div className="space-y-2.5 text-xs">
+                <div className="space-y-2 text-xs">
                   {[
-                    { key: "accounts", label: "Meta, Google, OpenAI accounts registered under clinic ownership" },
+                    { key: "accounts", label: "Meta, Google, OpenAI registered in clinic ownership" },
                     { key: "workflows", label: "Workflow JSON backups shared with clinic owner" },
-                    { key: "receptionist", label: "Receptionist given 15-min training (when to take over manually)" },
+                    { key: "receptionist", label: "Receptionist given 15-min training (when to take over)" },
                     { key: "emergency", label: "Emergency flow and support contact written down" },
                     { key: "privacy", label: "Privacy Policy live and consent line verified in bot greeting" },
                     { key: "terms", label: "Monthly maintenance scope and payment terms signed" },
@@ -1196,15 +1327,23 @@ export default function ClinicApp() {
                     <label
                       key={item.key}
                       onClick={() => setHandoverChecks(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
-                      className="flex items-start space-x-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-teal-500/50 cursor-pointer transition"
+                      className={`flex items-start space-x-2.5 p-2 rounded-lg border cursor-pointer transition ${
+                        isDarkMode 
+                          ? 'bg-slate-900/60 border-slate-800 hover:border-teal-500/40' 
+                          : 'bg-slate-50 border-slate-200 hover:border-teal-500/40'
+                      }`}
                     >
                       <input
                         type="checkbox"
                         checked={handoverChecks[item.key] || false}
                         onChange={() => {}}
-                        className="mt-0.5 rounded text-teal-500 focus:ring-0 bg-slate-800 border-slate-700"
+                        className="mt-0.5 rounded text-teal-600 focus:ring-0 shrink-0"
                       />
-                      <span className={`text-xs ${handoverChecks[item.key] ? 'text-teal-300 font-medium' : 'text-slate-400'}`}>
+                      <span className={`text-xs ${
+                        handoverChecks[item.key] 
+                          ? 'text-teal-700 dark:text-teal-300 font-medium' 
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}>
                         {item.label}
                       </span>
                     </label>
@@ -1217,72 +1356,84 @@ export default function ClinicApp() {
 
         {/* TAB 6: CLINIC BRANDING & SETTINGS */}
         {activeTab === 'branding' && (
-          <div className="bg-[#151f32] rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-xl max-w-4xl mx-auto">
-            <div className="flex items-center justify-between pb-5 border-b border-slate-800">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-                  <Sliders className="w-5 h-5 text-teal-400" />
+          <div className={`rounded-2xl border p-5 sm:p-6 shadow-xs max-w-3xl mx-auto w-full ${
+            isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+          }`}>
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="min-w-0 flex-1">
+                <h2 className={`text-base sm:text-lg font-bold flex items-center space-x-2 truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <Sliders className="w-4 h-4 text-teal-500 shrink-0" />
                   <span>Clinic Customizer & Rebranding Suite</span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Change these details to instantly adapt the AI receptionist and reports to your specific client.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  Instantly rebrand the AI receptionist, calendar, and reports for your client.
                 </p>
               </div>
               {saveSuccess && (
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-semibold flex items-center">
-                  <Check className="w-3.5 h-3.5 mr-1" /> Saved Live!
+                <span className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-semibold flex items-center shrink-0">
+                  <Check className="w-3 h-3 mr-1" /> Saved!
                 </span>
               )}
             </div>
 
-            <form onSubmit={handleSaveBranding} className="mt-6 space-y-5 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSaveBranding} className="mt-5 space-y-4 text-xs w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Clinic Name:</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Clinic Name:</label>
                   <input
                     type="text"
                     value={editForm.clinicName || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, clinicName: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Primary Doctor Name:</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Primary Doctor Name:</label>
                   <input
                     type="text"
                     value={editForm.doctorName || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, doctorName: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Doctor Specialty:</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Doctor Specialty:</label>
                   <input
                     type="text"
                     value={editForm.doctorSpecialty || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, doctorSpecialty: e.target.value }))}
                     placeholder="e.g. Dental Surgeon"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Consultation Fee (₹):</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Consultation Fee (₹):</label>
                   <input
                     type="number"
                     value={editForm.consultationFee || 500}
                     onChange={e => setEditForm(prev => ({ ...prev, consultationFee: Number(e.target.value) }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Slot Length (Minutes):</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Slot Duration (Mins):</label>
                   <select
                     value={editForm.slotDurationMinutes || 20}
                     onChange={e => setEditForm(prev => ({ ...prev, slotDurationMinutes: Number(e.target.value) }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   >
                     <option value={15}>15 Minutes</option>
                     <option value={20}>20 Minutes (Recommended)</option>
@@ -1291,34 +1442,38 @@ export default function ClinicApp() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Clinic Phone (Emergency hotline):</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Clinic Phone (Emergency hotline):</label>
                   <input
                     type="text"
                     value={editForm.clinicPhone || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, clinicPhone: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1.5">Owner Report Email:</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Owner Report Email:</label>
                   <input
                     type="email"
                     value={editForm.ownerEmail || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, ownerEmail: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-hidden focus:border-teal-400"
+                    className={`w-full border rounded-lg p-2.5 focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+                      isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end">
+              <div className="pt-3 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-teal-600/30 flex items-center space-x-2"
+                  className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-5 py-2.5 rounded-lg transition shadow-xs flex items-center space-x-1.5"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Update Clinic Configuration</span>
+                  <span>Save Configuration</span>
                 </button>
               </div>
             </form>
@@ -1327,23 +1482,23 @@ export default function ClinicApp() {
 
         {/* TAB 7: PDF GUIDE & N8N WORKFLOWS */}
         {activeTab === 'guide' && (
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-teal-950 via-[#151f32] to-[#111927] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-teal-500/20">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                  <span className="text-xs uppercase tracking-widest text-teal-400 font-extrabold">
+          <div className="space-y-5 w-full min-w-0">
+            <div className="bg-gradient-to-r from-teal-700 to-indigo-800 text-white rounded-2xl p-5 sm:p-6 shadow-xs">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] uppercase tracking-wider text-teal-200 font-bold">
                     ORVANTA PRACTICAL SETUP GUIDE
                   </span>
-                  <h2 className="text-2xl font-black mt-1">Clinic WhatsApp Appointment Automation</h2>
-                  <p className="text-xs text-slate-300 mt-2 max-w-2xl leading-relaxed">
-                    Zero-theory manual prepared by Sachin Prajapati. Everything is implemented and packaged: 3 core workflows, 7 AI tools, 10 phases, and complete copy-paste JSON configurations.
+                  <h2 className="text-xl sm:text-2xl font-bold mt-1">Clinic WhatsApp Appointment Automation</h2>
+                  <p className="text-xs text-teal-100 mt-1.5 max-w-2xl leading-relaxed">
+                    Zero-theory manual prepared by Sachin Prajapati. Complete workflows, 7 AI tools, 10 phases, and copy-paste JSON configurations.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2.5">
+                <div className="flex flex-wrap gap-2 shrink-0">
                   <a
                     href="/workflows/1-clinic-ai-booking-agent.json"
                     download="1-clinic-ai-booking-agent.json"
-                    className="text-xs bg-teal-600 hover:bg-teal-500 text-white font-bold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition shadow-md shadow-teal-600/20"
+                    className="text-xs bg-white text-teal-800 hover:bg-teal-50 font-bold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition shadow-xs"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Workflow 1 JSON</span>
@@ -1351,7 +1506,7 @@ export default function ClinicApp() {
                   <a
                     href="/workflows/2-clinic-auto-reminder.json"
                     download="2-clinic-auto-reminder.json"
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-white font-bold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition border border-slate-700"
+                    className="text-xs bg-teal-800/80 hover:bg-teal-800 text-white font-bold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-teal-600"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Workflow 2 JSON</span>
@@ -1359,7 +1514,7 @@ export default function ClinicApp() {
                   <a
                     href="/workflows/3-clinic-daily-report.json"
                     download="3-clinic-daily-report.json"
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-white font-bold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition border border-slate-700"
+                    className="text-xs bg-teal-800/80 hover:bg-teal-800 text-white font-bold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-teal-600"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Workflow 3 JSON</span>
@@ -1369,7 +1524,7 @@ export default function ClinicApp() {
             </div>
 
             {/* Phases Checklist Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {[
                 {
                   phase: "Phase 0",
@@ -1402,13 +1557,15 @@ export default function ClinicApp() {
                   desc: "Approved utility template appointment_reminder, 15-min scheduler checking 30-75 min window, 8:00 PM owner daily email report."
                 }
               ].map((p, idx) => (
-                <div key={idx} className="bg-[#151f32] rounded-2xl border border-slate-800 p-5 shadow-sm">
-                  <div className="flex items-center space-x-2 text-teal-400 font-extrabold text-xs">
+                <div key={idx} className={`rounded-xl border p-4 shadow-2xs ${
+                  isDarkMode ? 'bg-[#151f32] border-slate-800' : 'bg-white border-slate-200'
+                }`}>
+                  <div className="flex items-center space-x-2 text-teal-600 dark:text-teal-400 font-bold text-xs">
                     <span>{p.phase}</span>
-                    <span className="text-slate-500">•</span>
-                    <span className="text-white text-sm font-bold">{p.title}</span>
+                    <span className="text-slate-300 dark:text-slate-600">•</span>
+                    <span className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{p.title}</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">{p.desc}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{p.desc}</p>
                 </div>
               ))}
             </div>
@@ -1417,11 +1574,13 @@ export default function ClinicApp() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#111927] border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
+      <footer className={`border-t py-4 text-center text-xs transition-colors ${
+        isDarkMode ? 'bg-[#111827] border-slate-800 text-slate-500' : 'bg-white border-slate-200 text-slate-500'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p>© 2026 {settings?.clinicName || 'Sunrise Clinic'} • Built for Production & Client Delivery</p>
-          <div className="flex items-center space-x-4 text-slate-400">
-            <span>Powered by WhatsApp Cloud API</span>
+          <div className="flex items-center space-x-3 text-slate-400">
+            <span>WhatsApp Cloud API</span>
             <span>•</span>
             <span>Google Calendar & Sheets</span>
             <span>•</span>
